@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Аркан — карта дня</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--night:#0f1219;--night2:#181c27;--line:#2c3142;--paper:#ece2c9;--ink:#1b1a17;--ochre:#c9a24a;--red:#b5402f;--green:#3f7f78;--text:#e9e0cc;--mute:#948c7a;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--night);color:var(--text);font:17px/1.55 var(--serif)}
+body{background:
+  radial-gradient(1px 1px at 12% 9%,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 78% 6%,#fff6 50%,transparent 51%),
+  radial-gradient(1.5px 1.5px at 91% 22%,#fff5 50%,transparent 51%),radial-gradient(1px 1px at 30% 3%,#fff5 50%,transparent 51%),
+  radial-gradient(1px 1px at 55% 14%,#fff4 50%,transparent 51%),radial-gradient(1.5px 1.5px at 6% 27%,#fff4 50%,transparent 51%),
+  radial-gradient(90% 40% at 50% 0%,#1c2233 0%,var(--night) 70%);background-repeat:no-repeat}
+#app{max-width:520px;margin:0 auto;padding:16px 18px 104px}
+h1{font:600 28px/1.15 var(--serif);margin:14px 0 2px;letter-spacing:.2px}
+h2{font:600 20px/1.2 var(--serif);margin:26px 0 8px}
+p{margin:0 0 10px}
+.mute{color:var(--mute)}.small{font-size:14px;line-height:1.45}.it{font-style:italic}.c{text-align:center}
+.top{display:flex;justify-content:space-between;align-items:baseline;font:14px var(--sans);color:var(--mute)}
+.top b{color:var(--text);font-weight:500}
+/* ---------- карта ---------- */
+.flip{perspective:1100px;width:11em;height:17.6em;font-size:20px;margin:18px auto 14px;cursor:pointer;position:relative}
+.flip.sm{font-size:9px;margin:0}.flip.xs{font-size:7px;margin:0}.flip.md{font-size:13px;margin:0 auto}
+.flip-in{position:relative;width:100%;height:100%;transition:transform .8s cubic-bezier(.2,.7,.2,1);transform-style:preserve-3d}
+.flip.open .flip-in,.flip.static .flip-in{transform:rotateY(180deg)}
+.flip.static .flip-in{transition:none}
+.face{position:absolute;inset:0;border-radius:.6em;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;box-shadow:0 .5em 1.4em rgba(0,0,0,.5)}
+.back{background:repeating-linear-gradient(45deg,transparent 0 .5em,rgba(201,162,74,.28) .5em .56em),repeating-linear-gradient(-45deg,transparent 0 .5em,rgba(201,162,74,.28) .5em .56em),#1b2132;border:.12em solid var(--ochre);display:flex;align-items:center;justify-content:center}
+.back:after{content:"";position:absolute;inset:.4em;border:.05em solid rgba(201,162,74,.6);border-radius:.35em}
+.back svg{width:3.2em;height:3.2em;background:#1b2132;border-radius:50%;padding:.3em}
+.front{transform:rotateY(180deg);background:radial-gradient(circle at 30% 18%,#f6eedb,#e4d7b8);color:var(--ink);display:flex;flex-direction:column;align-items:center;padding:.75em .5em .7em}
+.front:after{content:"";position:absolute;inset:.32em;border:.07em solid var(--ink);border-radius:.4em;box-shadow:inset 0 0 0 .14em #ece2c9,inset 0 0 0 .19em rgba(27,26,23,.55);pointer-events:none}
+.front .num{font:600 .8em var(--serif);letter-spacing:.12em}
+.front .art{flex:1;width:86%;min-height:0;margin:.15em 0}
+.front .nm{font:600 .62em/1.15 var(--serif);letter-spacing:.14em;text-transform:uppercase;text-align:center;min-height:2.3em;display:flex;align-items:center}
+.art *{fill:none;stroke:#1b1a17;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.art .o{fill:#c9a24a}.art .r{fill:#b5402f}.art .k{fill:#1b1a17}.art .g{stroke:#3f7f78}.art .n{stroke:none}
+.spark{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;background:var(--ochre);transform:rotate(45deg);opacity:0;pointer-events:none;animation:spark .9s ease-out forwards}
+@keyframes spark{0%{opacity:1;transform:translate(0,0) rotate(45deg) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(225deg) scale(.2)}}
+/* ---------- текст расклада ---------- */
+.sec{border-top:1px solid var(--line);padding:14px 0 4px}
+.sec .lb{font:italic 15px var(--serif);color:var(--ochre);margin-bottom:2px}
+.sec h3{font:600 19px/1.2 var(--serif);margin:0 0 4px}
+.keys{font-style:italic;color:var(--mute);margin:0 0 2px}
+blockquote{margin:18px 0;padding:2px 0 2px 16px;border-left:2px solid var(--ochre);font:italic 21px/1.35 var(--serif)}
+.facts{font:14px/1.5 var(--sans);color:var(--mute);border-top:1px solid var(--line);padding-top:12px;margin-top:6px}
+.facts b{color:var(--text);font-weight:500}
+/* ---------- кнопки ---------- */
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:15px 14px;font-family:var(--sans);font-size:16px;font-weight:600;color:var(--ink);background:var(--paper);margin:10px 0;cursor:pointer;text-align:center;text-decoration:none}
+.btn.gold{background:var(--ochre)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:500}
+.btn:active{transform:scale(.985)}
+.seg{display:flex;gap:8px;margin:8px 0 4px}
+.seg button{flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);font-family:var(--sans);font-size:15px;cursor:pointer}
+.seg button.on{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin:8px 0 4px}.bar i{display:block;height:100%;background:var(--ochre)}
+/* ---------- список раскладов ---------- */
+.opt{display:flex;gap:14px;align-items:center;padding:15px 0;border-top:1px solid var(--line);cursor:pointer}
+.opt:last-of-type{border-bottom:1px solid var(--line)}
+.opt .n{font:600 26px var(--serif);color:var(--ochre);width:34px;text-align:center}
+.opt .d{flex:1}.opt .d b{display:block;font:600 18px/1.25 var(--serif)}.opt .d span{color:var(--mute);font-size:15px;line-height:1.35;display:block}
+.opt .pr{font:13px var(--sans);color:var(--mute);white-space:nowrap}
+.opt .pr.pay{color:var(--ochre)}
+.cards{display:grid;gap:10px 8px;justify-content:center;margin:18px 0 6px}
+.cards.n3{grid-template-columns:repeat(3,auto)}.cards.n7{grid-template-columns:repeat(4,auto)}
+.cards>div{display:flex;flex-direction:column;align-items:center;gap:6px}
+.cards .lbl{font:12px/1.2 var(--sans);color:var(--mute);text-align:center;max-width:9em}
+.deck{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 8px;margin-top:16px;justify-items:center}
+.deck>div{cursor:pointer}
+.stats{display:flex;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:14px 0}
+.stats div{flex:1;padding:12px 4px;text-align:center}.stats div+div{border-left:1px solid var(--line)}
+.stats b{display:block;font:600 26px var(--serif)}.stats span{font:12px var(--sans);color:var(--mute)}
+.flip.dim{opacity:.38}
+.t2 .front{box-shadow:0 0 0 2px #c3c9d2,0 .5em 1.4em rgba(0,0,0,.5)}
+.t3 .front{box-shadow:0 0 0 2px var(--ochre),0 0 16px rgba(201,162,74,.65)}
+.deck .lbl{font:12px/1.2 var(--sans);color:var(--mute);text-align:center;margin-top:5px}
+select,input[type=time],input[type=number]{width:100%;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--night2);color:var(--text);font:16px var(--sans);color-scheme:dark;margin-bottom:10px}
+label.f{display:block;font:13px var(--sans);color:var(--mute);margin:10px 0 4px}
+.row{display:flex;gap:14px;align-items:center;padding:13px 0;border-top:1px solid var(--line);cursor:pointer}
+.row .g{font:24px var(--serif);color:var(--ochre);width:34px;text-align:center}
+.row .d{flex:1;min-width:0}.row .d b{display:block;font:600 18px/1.25 var(--serif)}.row .d span{color:var(--mute);font:14px/1.4 var(--sans);display:block}
+.row .v{font:600 18px var(--serif);color:var(--ochre);white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.chips button{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--text);font:14px var(--sans);cursor:pointer}
+.ans{display:block;width:100%;text-align:left;padding:14px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text);font:17px/1.35 var(--serif);margin:10px 0;cursor:pointer}
+.ans:active{background:var(--night2)}
+.big{font:600 56px/1 var(--serif);color:var(--ochre);margin:10px 0 4px}
+.dots{letter-spacing:3px;color:var(--ochre)}
+.hist{border-top:1px solid var(--line);padding:10px 0}.hist small{font:13px var(--sans);color:var(--mute);display:block}
+input[type=date]{width:100%;padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--night2);color:var(--text);font:16px var(--sans);color-scheme:dark}
+.birth{display:flex;gap:16px;align-items:center;margin:10px 0}
+/* ---------- навигация ---------- */
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(15,18,25,.97);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+.tabs button{flex:1;background:none;border:0;color:var(--mute);padding:9px 0 10px;font:500 10.5px var(--sans);cursor:pointer;white-space:nowrap}
+.tabs svg{display:block;width:24px;height:24px;margin:0 auto 3px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tabs button.on{color:var(--ochre)}
+.modal{position:fixed;inset:0;background:rgba(6,8,12,.78);display:flex;align-items:flex-end;justify-content:center;z-index:9}
+.sheet{background:var(--night2);border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:6px 18px calc(16px + env(safe-area-inset-bottom));width:100%;max-width:520px}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--paper);color:var(--ink);padding:10px 16px;border-radius:10px;font:14px var(--sans);z-index:10;max-width:90%;text-align:center}
+.foot{color:#6f6959;font:12px/1.5 var(--sans);margin-top:26px}
+.yn{font:600 40px var(--serif);color:var(--ochre);margin:6px 0 0}
+button:focus-visible,.opt:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.flip-in{transition:none}.spark{display:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="tabs" id="tabs">
+  <button data-v="day"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>День</button>
+  <button data-v="spreads"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="8" height="13" rx="1.5" transform="rotate(-10 7 12)"/><rect x="13" y="6" width="8" height="13" rx="1.5" transform="rotate(10 17 12)"/></svg>Расклады</button>
+  <button data-v="stars"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.4 9.4l6-.8z"/></svg>Звёзды</button>
+  <button data-v="deck"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="6" height="8" rx="1"/><rect x="14" y="3" width="6" height="8" rx="1"/><rect x="4" y="13" width="6" height="8" rx="1"/><rect x="14" y="13" width="6" height="8" rx="1"/></svg>Коллекция</button>
+  <button data-v="me"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg>Мой путь</button>
+</div>
+<script>
+// ---------- колода: Старшие арканы ----------
+// [0 название, 1 символ, 2 ключевые слова, 3 день, 4 прошлое, 5 будущее, 6 любовь, 7 совет, 8 да/нет, 9 сейчас, 10 работа]
+const C=[
+["Шут","🎭","начало, лёгкость, риск","Сегодня хорошо начинать то, к чему вы давно присматривались. Не обязательно знать весь путь — достаточно первого шага.","Когда-то вы шагнули в неизвестность без всяких гарантий, и этот шаг до сих пор определяет ваш путь.","Впереди новое начало: предложение или идея, для которых прежний опыт почти не пригодится.","В отношениях время лёгкости и спонтанности: меньше планов, больше живого интереса друг к другу.","Попробуйте новое — и разрешите себе выглядеть новичком.","y","Вы на пороге нового и пока не знаете правил игры. Это нормально: сейчас решимость важнее опыта.","В работе время пробовать новое: смена сферы, первый проект, непривычная задача. С деньгами пока осторожнее."],
+["Маг","🪄","воля, мастерство, действие","У вас уже есть всё нужное, чтобы сдвинуть дело с места. День для конкретных действий, а не для раздумий.","То, что у вас есть, вы создали сами — своими руками и своей настойчивостью.","Скоро появится возможность показать, что вы умеете. Инициатива будет на вашей стороне.","Многое зависит от вашего первого шага: скажите прямо, чего хотите.","Выберите одно дело и доведите его сегодня до результата.","y","Ситуация в ваших руках: есть и ресурсы, и умения. Не хватает только решения начать.","Удачное время, чтобы предлагать свои услуги и начинать проекты. Ваши навыки можно превратить в доход."],
+["Верховная Жрица","🌙","интуиция, тайна, пауза","Не всё сегодня нужно решать и обсуждать. Прислушайтесь к тому, что вы уже знаете, но ещё не сказали вслух.","Раньше вы многое держали в себе и доверяли чутью больше, чем чужим советам.","Ответ придёт не от людей, а изнутри — когда вокруг станет тише.","Между вами есть недосказанное. Не торопите признания: сейчас важнее наблюдать, чем спрашивать.","Возьмите паузу перед важным ответом.","m","Сейчас вам известно не всё. Часть картины скрыта, и торопиться с выводами рано.","Не раскрывайте планы раньше времени. Соберите сведения и понаблюдайте, прежде чем подписывать и вкладывать."],
+["Императрица","🌹","изобилие, забота, рост","День про заботу и удовольствие: то, во что вы вкладываете тепло, сегодня растёт особенно хорошо.","За спиной у вас время, когда вас поддерживали и многое давалось в достатке.","Впереди время роста: проект, отношения или доход начнут приносить плоды.","Тёплый, щедрый период. Отношения крепнут через заботу и простые приятные мелочи.","Сделайте что-нибудь приятное для себя или близкого — без повода.","y","Сейчас время созидания: то, о чём вы заботитесь, растёт и крепнет.","Дела приносят плоды: возможны рост дохода и выгодные предложения. Вкладывайтесь в то, что растёт."],
+["Император","👑","порядок, опора, ответственность","Сегодня выигрывает тот, у кого есть план. Наведите порядок в делах и возьмите ответственность на себя.","В прошлом вам пришлось рано повзрослеть и самому выстраивать правила.","Ситуация станет устойчивой, если вы зададите ей рамки и сроки.","Отношениям нужна надёжность: выполненные обещания сейчас важнее красивых слов.","Определите одно правило, которого будете держаться всю неделю.","y","Сейчас от вас ждут твёрдости и ясных решений. Порядок зависит от вас.","Время брать на себя руководство и наводить порядок в делах и финансах. Дисциплина окупится."],
+["Иерофант","🗝️","традиция, наставник, смысл","Полезный день, чтобы учиться и спрашивать совета у тех, кто уже прошёл этот путь.","На вас сильно повлияли учитель, семья или среда с твёрдыми правилами.","Появится человек или знание, которые расставят всё по местам.","Вам важны общие ценности. Поговорите о том, во что вы оба верите и чего ждёте.","Спросите совета у того, кому доверяете.","m","Сейчас вы действуете по принятым правилам. Стоит понять, ваши ли они.","Полезны обучение, наставник и проверенные способы работы. С деньгами надёжнее действовать по правилам."],
+["Влюблённые","💞","выбор, близость, согласие","Сегодня перед вами выбор, и сердце в нём значит не меньше расчёта. Решайте честно перед собой.","Когда-то вы сделали выбор сердцем, и он многое изменил.","Впереди важное решение, связанное с близким человеком или делом по душе.","Сильная карта для чувств: взаимность возможна, если вы выбираете друг друга осознанно.","Назовите вслух, чего вы на самом деле хотите.","y","Сейчас вы стоите перед выбором, и оба варианта вам дороги.","Предстоит выбор между двумя предложениями или партнёрами. Выбирайте то, с чем согласны внутренне."],
+["Колесница","🐎","движение, победа, воля","День набирает скорость. Держите направление и не отвлекайтесь на споры — цель ближе, чем кажется.","Вы уже добивались своего упорством, даже когда вас тянули в разные стороны.","Впереди рывок: поездка, переезд или быстрое продвижение в делах.","Отношения движутся вперёд, когда вы смотрите в одну сторону. Договоритесь о направлении.","Не сбавляйте темп на полпути.","y","Сейчас вы в движении и набираете ход. Главное — не дать сбить себя с курса.","Время активного продвижения: поездки, быстрый рост, победа в соревновании. Не распыляйтесь."],
+["Сила","🦁","мягкая сила, терпение, смелость","Сегодня побеждает спокойствие, а не напор. Мягкость окажется сильнее давления.","Вы справились с трудным периодом благодаря выдержке, а не борьбе.","Вам хватит сил на то, что сейчас пугает. Страх окажется больше самой задачи.","Бережность и терпение сейчас важнее страсти. Не пытайтесь переделать друг друга.","Ответьте спокойно там, где хочется вспылить.","y","Сейчас от вас требуется выдержка. Вы справляетесь лучше, чем вам кажется.","Сложную задачу или трудного человека вы возьмёте терпением. Доход растёт медленно, но верно."],
+["Отшельник","🏮","уединение, поиск, мудрость","День для тишины и собственных мыслей. Не всё нужно обсуждать — кое-что стоит обдумать в одиночку.","Было время, когда вы отошли от людей, чтобы понять себя.","Впереди период сосредоточенности: меньше шума, больше ясности.","Кому-то из вас нужно пространство. Это не охлаждение, а способ услышать себя.","Проведите час без телефона и разговоров.","m","Сейчас вы ищете ответ в себе и держитесь в стороне от чужих мнений.","Хорошо работается в одиночку: исследование, учёба, глубокая задача. Крупные траты лучше отложить."],
+["Колесо Фортуны","🎡","перемены, шанс, цикл","Обстоятельства сегодня меняются быстро и не по вашему плану. Гибкость важнее контроля.","Счастливый случай или резкий поворот однажды уже изменил вашу жизнь.","Скоро выпадет шанс. Он будет коротким — успейте им воспользоваться.","В отношениях новый виток: случайная встреча или неожиданный разговор многое изменят.","Согласитесь на то, что предлагает случай.","y","Сейчас всё в движении, и мало что зависит от вас. Положение меняется прямо на глазах.","Возможен неожиданный поворот: новое место, предложение или удачная сделка. Будьте готовы действовать быстро."],
+["Справедливость","⚖️","честность, баланс, решение","День честных решений. Взвесьте факты и поступите так, как считаете правильным, а не удобным.","Вы получили то, что заслужили своими поступками, — и хорошее, и трудное.","Вопрос решится по справедливости. Договорённости и долги придут в порядок.","Отношениям нужны честный разговор и равный вклад с обеих сторон.","Скажите правду — сначала себе.","m","Сейчас время взвешивать и решать. От вашей честности зависит исход.","На первый план выходят договоры, расчёты и обязательства. Проверьте документы и закройте долги."],
+["Повешенный","🙃","пауза, новый взгляд, отпускание","Сегодня дела могут застопориться. Не давите: посмотрите на ситуацию под другим углом.","Был период ожидания, когда от вас ничего не зависело. Он научил вас терпению.","Впереди пауза, которая окажется полезной: планы изменятся к лучшему.","Не торопите события. Сейчас важнее понять другого, чем настоять на своём.","Отпустите то, что не можете контролировать.","n","Сейчас вы в подвешенном состоянии. Действовать рано — полезнее сменить угол зрения.","Дела идут медленнее, чем хотелось бы. Не лучшее время для вложений — используйте паузу, чтобы пересмотреть планы."],
+["Смерть","🥀","завершение, обновление, переход","Что-то подошло к концу, и держаться за это не стоит. Освободите место для нового.","Вы пережили серьёзное завершение, после которого стали другим человеком.","Один этап закончится, чтобы начался следующий. Перемена будет к лучшему, хотя и не сразу.","Прежний формат отношений себя исчерпал: они либо обновятся, либо уступят место новым.","Завершите одно старое дело или попрощайтесь с ненужным.","n","Сейчас что-то в вашей жизни заканчивается. Сопротивляться бесполезно — лучше помочь этому завершиться.","Заканчивается проект, должность или источник дохода. Это освобождает вас для более подходящего дела."],
+["Умеренность","🏺","равновесие, мера, исцеление","День ровного темпа. Не бросайтесь в крайности: спокойная середина сегодня даст больше всего.","Вы долго восстанавливали равновесие и научились не торопиться.","Постепенно всё уладится. Терпение и мера приведут туда, куда не довела спешка.","Отношениям на пользу спокойствие и готовность понемногу уступать с обеих сторон.","Сделайте меньше, но аккуратнее.","y","Сейчас вы ищете равновесие между крайностями — и постепенно его находите.","Ровная работа без рывков даёт лучший результат. В финансах — умеренность и постепенные накопления."],
+["Дьявол","⛓️","искушение, привычка, тень","Сегодня легко поддаться привычке или соблазну. Заметьте, что вами управляет, — этого уже достаточно.","В прошлом вас держала привязанность или привычка, от которой было трудно уйти.","Появится заманчивое предложение. Проверьте, какова его настоящая цена.","Сильное притяжение, в котором легко потерять себя. Убедитесь, что рядом со страстью есть свобода.","Откажитесь сегодня от одной вредной мелочи.","n","Сейчас вас удерживает привычка, страх или выгода. Цепи слабее, чем кажутся.","Остерегайтесь лёгких денег, кредитов и работы, которая выматывает ради одной зарплаты."],
+["Башня","⚡","встряска, правда, освобождение","Возможны неожиданная новость или резкий разговор. То, что рушится, держалось непрочно.","Вы пережили внезапный слом, который разрушил иллюзии и освободил вас.","Впереди встряска, которая расчистит место. Не цепляйтесь за то, что и так шаталось.","Скрытое выйдет наружу. Честный, пусть и трудный, разговор лучше затянувшегося молчания.","Не чините то, что пора отпустить.","n","Сейчас рушится то, что казалось прочным. Это больно, но расчищает место для настоящего.","Возможны резкие перемены: реорганизация, срыв планов, непредвиденные расходы. Держите запас."],
+["Звезда","⭐","надежда, вдохновение, доверие","Светлый день: появляется вера, что всё получится. Мечтайте смело и делитесь планами.","После трудного времени к вам вернулась надежда — и вы пошли на свет.","Впереди спокойный и светлый период. Желание, о котором вы почти забыли, начнёт сбываться.","Искренность и доверие. Хорошее время, чтобы открыться и говорить о будущем.","Запишите одно желание и первый шаг к нему.","y","Сейчас у вас есть ясная надежда и тихая уверенность. Вы идёте в верном направлении.","Хорошее время для творческих замыслов и долгих планов. Вашу работу заметят."],
+["Луна","🌘","сомнения, сны, неясность","Сегодня многое кажется не тем, чем является. Не принимайте решений на эмоциях и не верьте слухам.","Был период тревог и неопределённости, когда вы шли почти вслепую.","Ситуация пока туманна. Ясность придёт позже — не торопитесь с выводами.","В отношениях много домыслов. Спросите прямо, а не додумывайте.","Отложите важное решение до утра.","m","Сейчас вами движут тревоги и догадки. Не всё, чего вы боитесь, существует на самом деле.","Не всё в делах прозрачно. Перепроверяйте обещания и не спешите с финансовыми решениями."],
+["Солнце","☀️","радость, успех, ясность","Один из лучших дней: дела ладятся, люди отзывчивы. Беритесь за главное.","У вас был счастливый, ясный период, из которого вы до сих пор черпаете силы.","Впереди успех и признание. То, что вы начали, даст хороший результат.","Тепло, открытость и радость. Отличное время быть вместе и ничего не усложнять.","Поделитесь хорошим настроением с тем, кому оно нужно.","y","Сейчас у вас сильная позиция: ясность, энергия и поддержка людей.","Успех, признание и хороший результат. Смело показывайте свою работу и просите достойную оплату."],
+["Суд","📯","пробуждение, итог, призвание","День подведения итогов. Прошлое возвращается, чтобы вы поставили точку или дали второй шанс.","Однажды вы переосмыслили свою жизнь и начали заново.","Придёт известие или осознание, после которого вы станете действовать иначе.","Возможны возвращение старых чувств или разговор, который закроет давнюю историю.","Простите — себя или другого.","y","Сейчас вы подводите итоги и чувствуете, что пора жить иначе.","Вас могут позвать обратно или предложить дело по призванию. Время оценить, тем ли вы занимаетесь."],
+["Мир","🌍","завершение, целостность, награда","Всё складывается в цельную картину. День хороших итогов и заслуженного отдыха.","Вы успешно завершили большой этап и получили то, к чему шли.","Впереди удачное завершение дела и выход на новый уровень.","Гармония и чувство, что вы на своём месте. Отношения готовы к следующему шагу.","Отметьте то, что уже сделано.","y","Сейчас вы близки к завершению большого дела. Остался последний шаг.","Проект успешно завершается, вы получаете заслуженное. Впереди выход на новый уровень."]
+];
+const ROMAN=["0","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI"];
+const ASTRO=["Уран, стихия воздуха","Меркурий, стихия воздуха","Луна, стихия воды","Венера, стихия земли","Овен, стихия огня","Телец, стихия земли","Близнецы, стихия воздуха","Рак, стихия воды","Лев, стихия огня","Дева, стихия земли","Юпитер, стихия огня","Весы, стихия воздуха","Нептун, стихия воды","Скорпион, стихия воды","Стрелец, стихия огня","Козерог, стихия земли","Марс, стихия огня","Водолей, стихия воздуха","Рыбы, стихия воды","Солнце, стихия огня","Плутон, стихия огня","Сатурн, стихия земли"];
+const AFFIRM=["Я разрешаю себе начинать с чистого листа.","У меня есть всё, чтобы сделать это.","Я доверяю своему внутреннему знанию.","Я позволяю хорошему расти рядом со мной.","Я сам задаю порядок в своей жизни.","Я учусь у тех, кто прошёл этот путь.","Я выбираю сердцем и отвечаю за свой выбор.","Я держу курс и двигаюсь вперёд.","Моя мягкость — это сила.","В тишине я слышу себя.","Я открыт переменам и удаче.","Я поступаю честно, и это возвращается.","Я отпускаю контроль и вижу больше.","Я отпускаю отжившее с благодарностью.","Я нахожу свою меру во всём.","Я сильнее своих привычек.","То, что рушится, освобождает меня.","Я верю в лучшее и иду к нему.","Я не обязан верить каждому своему страху.","Я разрешаю себе радоваться.","Я прощаю и начинаю заново.","Я на своём месте."];
+const ASK=["Что бы вы начали, если бы не боялись выглядеть глупо?","Какой один шаг сегодня приблизит вас к цели?","Что вы уже знаете, но не решаетесь признать?","О ком или о чём вам хочется позаботиться?","Где вам не хватает порядка и кто может его навести?","Чей совет вы давно собирались спросить?","Что вы выбрали бы, если бы никто не оценивал?","Что отвлекает вас от главного?","Где сегодня спокойствие даст больше, чем напор?","Когда вы в последний раз были наедине с собой?","Какой шанс вы рискуете не заметить?","Где вы не до конца честны с собой?","Что изменится, если посмотреть на это иначе?","Что в вашей жизни пора завершить?","В чём вы впадаете в крайности?","Какая привычка управляет вами, а не вы ею?","За какую шаткую опору вы держитесь?","О чём вы мечтали раньше и перестали?","Какой ваш страх существует только в воображении?","Что сегодня принесло вам радость?","Кого или что вам пора простить?","Чем из уже сделанного вы гордитесь?"];
+const MOON=[["Новолуние","время задумывать новое и начинать без шума"],["Растущий серп","пора делать первые шаги"],["Первая четверть","время решений и действий"],["Растущая луна","сил прибавляется — доводите начатое"],["Полнолуние","чувства на пике, не рубите с плеча"],["Убывающая луна","время делиться и благодарить"],["Последняя четверть","отпускайте лишнее"],["Убывающий серп","отдых и подведение итогов"]];
+const NUM=["","начинания и самостоятельность","сотрудничество и терпение","общение и творчество","порядок и труд","перемены и свобода","забота и дом","размышления и учёба","деньги и влияние","завершения и щедрость"];
+const SPREADS={
+  time:{name:"Три карты",desc:"Прошлое, настоящее и будущее вашего вопроса",pos:[["Прошлое",4],["Настоящее",9],["Будущее",5]]},
+  love:{name:"Отношения",desc:"Что между вами сейчас, к чему всё идёт и совет",pos:[["Отношения сейчас",6],["К чему всё идёт",5],["Совет",7]]},
+  work:{name:"Работа и деньги",desc:"Дела сейчас, к чему всё идёт и совет",pos:[["Дела сейчас",10],["К чему всё идёт",5],["Совет",7]]},
+  choice:{name:"Выбор",desc:"Куда ведёт первый вариант, куда второй — и совет",pos:[["Первый вариант",5],["Второй вариант",5],["Совет",7]]},
+  week:{name:"Неделя",desc:"Семь карт: по одной на каждый из ближайших дней",pos:null}
+};
+const REWARDS=[[7,1],[14,1],[30,2]];  // дней подряд -> раскладов в подарок
+const PRO_DAYS=30;
+
+// ---------- рисунки карт ----------
+const pt=(cx,cy,r,a)=>[(cx+r*Math.cos(a)).toFixed(1),(cy+r*Math.sin(a)).toFixed(1)];
+const star=(cx,cy,R,r,n,cls)=>{let d="";for(let i=0;i<n*2;i++)d+=(i?"L":"M")+pt(cx,cy,i%2?r:R,Math.PI*i/n-Math.PI/2);return `<path class="${cls||"o"}" d="${d}Z"/>`};
+const rays=(cx,cy,r1,r2,n,off)=>{let s="";for(let i=0;i<n;i++){const a=2*Math.PI*i/n+(off||0),p=pt(cx,cy,r1,a),q=pt(cx,cy,r2,a);s+=`<line x1="${p[0]}" y1="${p[1]}" x2="${q[0]}" y2="${q[1]}"/>`}return s};
+const inf=(cx,cy)=>`<path d="M${cx} ${cy}c-4-7-14-7-14 0s10 7 14 0s14-7 14 0s-10 7-14 0z"/>`;
+const wave=y=>`<path class="g" d="M14 ${y}q9-7 18 0t18 0t18 0t18 0"/>`;
+const G=[
+ `<circle class="o" cx="24" cy="26" r="8"/>${rays(24,26,11,15,8)}<path d="M8 104H58L72 116"/><line x1="34" y1="100" x2="66" y2="38"/><circle class="r" cx="70" cy="31" r="9"/>`,
+ `${inf(50,28)}<line x1="50" y1="42" x2="50" y2="92"/>${star(50,42,6,2.5,4)}${star(50,92,6,2.5,4)}<path d="M18 102H82"/><circle class="o" cx="28" cy="94" r="6"/><path class="r" d="M66 88h12l-2 12h-8z"/>`,
+ `<rect x="20" y="30" width="10" height="72"/><rect x="70" y="30" width="10" height="72"/><path d="M16 30h18M66 30h18M16 102h18M66 102h18"/><path class="o" d="M56 46a18 18 0 1 0 0 36a14 14 0 1 1 0-36z"/>`,
+ `<circle cx="50" cy="52" r="17"/><path d="M50 69V102M37 87H63"/><path class="r" d="M50 60c-9-7-6-15 0-10c6-5 9 3 0 10z"/>${[-24,-12,0,12,24].map(x=>star(50+x,20+Math.abs(x)/3,4,1.6,5)).join("")}`,
+ `<path class="o" d="M24 70V40l13 14 13-22 13 22 13-14v30z"/><rect x="24" y="70" width="52" height="9"/><circle class="r" cx="50" cy="98" r="8"/><path d="M50 82v8M45 86h10"/>`,
+ `<path d="M50 20V104M40 36H60M34 50H66M28 64H72"/><circle class="o" cx="32" cy="90" r="6"/><circle class="o" cx="68" cy="90" r="6"/>`,
+ `<circle cx="38" cy="68" r="20"/><circle cx="62" cy="68" r="20"/><path class="r" d="M50 52a20 20 0 0 1 0 32a20 20 0 0 1 0-32z"/>${star(50,26,9,3.5,8)}`,
+ `<circle cx="50" cy="80" r="20"/>${rays(50,80,5,20,8)}<circle class="o" cx="50" cy="80" r="5"/><path d="M24 52H76L68 26H32Z"/>${star(50,39,7,3,5,"r")}<path d="M24 52v8M76 52v8"/>`,
+ `${inf(50,28)}<path class="r" d="M50 102C18 78 30 52 50 68C70 52 82 78 50 102Z"/>`,
+ `<circle cx="50" cy="22" r="4"/><path d="M36 42L50 28L64 42Z"/><path d="M38 42H62L66 88H34Z"/>${star(50,65,12,5,6)}<path d="M28 94H72"/><path d="M22 60h-8M86 60h-8M24 44l-6-4M76 44l6-4"/>`,
+ `<circle cx="50" cy="60" r="30"/><circle cx="50" cy="60" r="20"/>${rays(50,60,6,20,8)}<circle class="o" cx="50" cy="60" r="6"/>${[0,1,2,3].map(i=>{const p=pt(50,60,38,i*Math.PI/2);return `<circle class="r" cx="${p[0]}" cy="${p[1]}" r="3"/>`}).join("")}`,
+ `<path d="M50 26V102M22 42H78M34 102H66"/><path d="M22 42L12 68M22 42L32 68M78 42L68 68M78 42L88 68"/><path class="o" d="M10 68H34Q22 84 10 68Z"/><path class="o" d="M66 68H90Q78 84 66 68Z"/>${star(50,22,7,3,4,"r")}`,
+ `<path d="M18 20H82M50 20V38"/><path d="M50 38V82M50 52L63 60L50 68M50 76L39 84M50 76L61 84"/><circle class="o" cx="50" cy="94" r="12"/><circle class="k" cx="50" cy="94" r="5"/>`,
+ `<path d="M12 104H88"/><path class="o" d="M56 104a14 14 0 0 1 28 0z"/><path d="M70 84v-6M54 92l-5-4M86 92l5-4"/><line x1="26" y1="104" x2="56" y2="22"/><path class="k" d="M56 22Q92 24 90 60Q78 34 54 28Z"/>`,
+ `<path d="M20 30H44L40 50H24Z"/><path d="M56 82H80L76 102H60Z"/><path class="g" d="M40 46Q58 52 66 82" stroke-width="4" stroke-dasharray="2 5"/>${star(74,32,9,3.5,8)}`,
+ `<path d="M30 22Q24 54 46 62M70 22Q76 54 54 62"/><path class="r" d="M43 62h14l-7 12z"/><ellipse cx="34" cy="94" rx="9" ry="6"/><ellipse cx="50" cy="94" rx="9" ry="6"/><ellipse cx="66" cy="94" rx="9" ry="6"/>`,
+ `<path d="M36 106L40 46H60L64 106Z"/><path class="o" d="M36 46V34h7v6h5v-6h7v6h5v-6h4v12z"/><rect class="k" x="47" y="58" width="6" height="10"/><rect class="k" x="47" y="82" width="6" height="10"/><path class="r" d="M86 8L68 32h8L64 52l22-26h-8z"/><circle class="k" cx="24" cy="72" r="2"/><circle class="k" cx="78" cy="80" r="2"/>`,
+ `${star(50,44,24,8,8)}${[[20,20],[80,20],[14,54],[86,54],[28,80],[72,80],[50,86]].map(p=>star(p[0],p[1],5,2,4,"k")).join("")}${wave(106)}`,
+ `<path class="o" d="M60 20a26 26 0 1 0 0 52a20 20 0 1 1 0-52z"/><path d="M76 38v6M84 52v6M74 64v6"/><path d="M16 100V84h10v16M74 100V84h10v16"/>${wave(108)}`,
+ `<circle class="o" cx="50" cy="60" r="17"/>${rays(50,60,22,35,12)}${rays(50,60,22,28,12,Math.PI/12)}`,
+ `<path d="M84 22L46 60"/><path class="o" d="M48 56L22 68Q24 88 42 90L54 64Z"/><path class="r" d="M62 42l10 10 12-12-10-10z"/><path d="M12 30q6-10 14-4q8-8 14 2"/><path d="M16 98l-6 8M30 102l-2 10M10 86l-8 4"/>`,
+ `<ellipse class="g" cx="50" cy="60" rx="26" ry="36" stroke-width="5" stroke-dasharray="3 6"/><circle class="o" cx="50" cy="60" r="12"/><path d="M38 60H62M50 48V72M41 52q9 8 18 0M41 68q9-8 18 0"/>${[[14,14],[86,14],[14,106],[86,106]].map(p=>star(p[0],p[1],5,2,4,"k")).join("")}`
+];
+const BACK=`<svg viewBox="0 0 40 40" class="art">${star(20,20,16,6,8).replace('class="o"','style="fill:#c9a24a;stroke:#c9a24a"')}</svg>`;
+
+// ---------- окружение ----------
+const tg=window.Telegram&&window.Telegram.WebApp;
+const inTg=!!(tg&&tg.initData);
+const Q=new URLSearchParams(location.search);
+const LOCAL=location.protocol==="file:";  // файл открыт с диска: демо-режим для проверки
+const P={s:Q.get("s"),p:Q.get("p"),b:Q.get("b")||"",demo:LOCAL};
+const PRICE_ONE=+Q.get("po")||15, PRICE_PRO=+Q.get("pp")||149;  // цены задаёт бот
+const uid=(inTg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.id)||0;
+const cloud=inTg&&tg.CloudStorage&&tg.isVersionAtLeast&&tg.isVersionAtLeast("6.9");
+let S={st:0,ld:"",seen:"",h:[],cr:0,pro:0,free:0,yn:"",u:[],lg:[],rt:{},rw:[],bd:"",bt:"",ci:0,tz:3,la:0,lo:0,c:null,cw:[],q:null};
+let F=[];  // друзья: хранятся отдельной записью в облаке
+let canSave=true, view="day";
+const $=id=>document.getElementById(id);
+const app=$("app");
+
+function migrate(){
+  if(!Array.isArray(S.c)||S.c.length!==C.length){S.c=new Array(C.length).fill(0);(S.h||[]).forEach(e=>e.slice(2).forEach(i=>S.c[i]++))}
+  S.cw=S.cw||[];S.rt=S.rt||{};S.rw=S.rw||[];if(!Array.isArray(F))F=[];
+}
+function load(cb){
+  const done=(v,f)=>{try{if(v)Object.assign(S,JSON.parse(v))}catch(e){} try{if(f)F=JSON.parse(f)}catch(e){} migrate();cb()};
+  if(!cloud){let v=null,f=null;try{v=localStorage.getItem("arkan");f=localStorage.getItem("arkan_f")}catch(e){} return done(v,f)}
+  // Облако Telegram: до трёх попыток. Если не ответило — работаем без сохранения,
+  // чтобы пустым состоянием не затереть покупки и дневник.
+  let tries=0, fin=false;
+  const attempt=()=>{
+    let got=false;
+    const t=setTimeout(()=>{if(!got&&!fin){got=true;next()}},4000);
+    tg.CloudStorage.getItems(["s","f"],(e,v)=>{if(got||fin)return;got=true;clearTimeout(t);if(e)return next();fin=true;done(v&&v.s,v&&v.f)});
+  };
+  const next=()=>{if(++tries<3)return attempt();fin=true;canSave=false;migrate();cb();
+    toast("Нет связи с облаком Telegram — сегодняшние изменения не сохранятся")};
+  attempt();
+}
+function saveF(){
+  if(!canSave)return;const v=JSON.stringify(F.slice(0,20));
+  if(cloud)tg.CloudStorage.setItem("f",v,()=>{});else try{localStorage.setItem("arkan_f",v)}catch(e){}
+}
+function save(){
+  if(!canSave)return;
+  S.h=S.h.slice(0,40);
+  const keep=new Set(S.h.map(e=>e[0]));for(const k in S.rt)if(!keep.has(k))delete S.rt[k];
+  let v=JSON.stringify(S);
+  while(v.length>3900&&S.h.length>5){S.h.pop();v=JSON.stringify(S)}  // предел облака Telegram — 4096 знаков
+  if(cloud)tg.CloudStorage.setItem("s",v,()=>{});else try{localStorage.setItem("arkan",v)}catch(e){}
+}
+function today(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function hash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+// Карта дня зависит только от номера пользователя и даты — поэтому её можно показать и друзьям.
+function dayCardOf(id,date){
+  const d=new Date(date+"T12:00:00"), y=today(new Date(d.getTime()-864e5));
+  let i=hash(id+"|"+date)%C.length;
+  if(hash(id+"|"+y)%C.length===i)i=(i+1)%C.length;  // не та же карта, что накануне
+  return i}
+function dayCard(){let id=uid;if(!id){try{id=localStorage.getItem("arkan_id")||String(Math.random()).slice(2);localStorage.setItem("arkan_id",id)}catch(e){id=1}}
+  return dayCardOf(id,today())}
+function esc(t){return String(t).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]))}
+function draw(n){const a=[...C.keys()];for(let i=a.length-1;i>0;i--){const r=crypto.getRandomValues(new Uint32Array(1))[0]%(i+1);[a[i],a[r]]=[a[r],a[i]]}return a.slice(0,n)}
+function isPro(){return (S.pro||0)>Date.now()}
+function haptic(k){try{inTg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred(k||"medium")}catch(e){}}
+function toast(t){document.querySelectorAll(".toast").forEach(x=>x.remove());const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3000)}
+function fmtDate(s){const [y,m,d]=s.split("-");return d+"."+m+"."+y}
+function longDate(d){const s=(d||new Date()).toLocaleDateString("ru-RU",{weekday:"long",day:"numeric",month:"long"});return s[0].toUpperCase()+s.slice(1)}
+function plural(n,a,b,c){const m=n%10,h=n%100;return m===1&&h!==11?a:m>=2&&m<=4&&(h<10||h>=20)?b:c}
+function digits(s){return String(s).replace(/\D/g,"").split("").reduce((a,b)=>a+ +b,0)}
+function dayNumber(){let n=digits(today());while(n>9)n=digits(n);return n}
+function birthCard(bd){let n=digits(bd);while(n>22)n=digits(n);return n===22?0:n}
+
+function cardHTML(i,cls,open){
+  return `<div class="flip ${cls||""} ${open?"open":""}" data-card="${i}"><div class="flip-in">
+    <div class="face back">${BACK}</div>
+    <div class="face front"><span class="num">${ROMAN[i]}</span><svg class="art" viewBox="0 0 100 120">${G[i]}</svg><span class="nm">${C[i][0]}</span></div></div></div>`;
+}
+function sparks(el){
+  for(let k=0;k<16;k++){const s=document.createElement("i");s.className="spark";const a=Math.PI*2*k/16,r=130+Math.random()*60;
+    s.style.setProperty("--dx",Math.cos(a)*r+"px");s.style.setProperty("--dy",Math.sin(a)*r+"px");el.appendChild(s);setTimeout(()=>s.remove(),1000)}
+}
+function sec(label,body,title){return `<div class="sec"><div class="lb">${label}</div>${title?`<h3>${title}</h3>`:""}<p>${body}</p></div>`}
+
+// ---------- «День» ----------
+function renderDay(){
+  const i=dayCard(), seen=S.seen===today(), m=moon();
+  app.innerHTML=`<div class="top"><b>${longDate()}</b><span>${m[0]}</span></div>
+    ${cardHTML(i,"",seen)}
+    <div id="dayText">${seen?dayText(i):`<p class="c mute it">Подумайте о предстоящем дне и нажмите на карту</p>`}</div>`;
+  if(!seen)app.querySelector(".flip").onclick=function(){
+    if(this.classList.contains("open"))return;
+    this.classList.add("open");haptic("heavy");sparks(this);
+    const y=today(new Date(Date.now()-864e5));
+    S.st=S.ld===y?(S.st||0)+1:1;S.ld=today();S.seen=today();
+    S.h.unshift([today(),"d",i]);
+    const fresh=collect([i]);
+    if(fresh.length)setTimeout(()=>toast("Новая карта в коллекции: "+C[i][0]),1300);
+    const rw=REWARDS.find(r=>r[0]===S.st&&!(S.rw||[]).includes(r[0]));
+    if(rw){S.rw=(S.rw||[]).concat(rw[0]);S.cr=(S.cr||0)+rw[1];
+      setTimeout(()=>toast(`${S.st} ${plural(S.st,"день","дня","дней")} подряд. В подарок — ${rw[1]} ${plural(rw[1],"расклад","расклада","раскладов")}`),4600)}
+    save();
+    setTimeout(()=>{$("dayText").innerHTML=dayText(i);bindDay(i)},700);
+  };else bindDay(i);
+}
+function streakLine(){
+  const st=S.st||1, next=REWARDS.find(r=>r[0]>st);
+  if(!next)return `<p class="small mute">${st} ${plural(st,"день","дня","дней")} подряд. Все подарки за серию собраны.</p>`;
+  const left=next[0]-st;
+  return `<p class="small mute" style="margin-bottom:0">${st} ${plural(st,"день","дня","дней")} подряд. До подарка — ${next[1]>1?next[1]+" бесплатных раскладов":"бесплатного расклада"} — ${left} ${plural(left,"день","дня","дней")}.</p>
+    <div class="bar"><i style="width:${Math.round(st/next[0]*100)}%"></i></div>`;
+}
+function dayText(i){const c=C[i], m=moon(), n=dayNumber(), r=S.rt[today()];
+  const z=mySign(), power=z!=null&&Z[z][2]===i;
+  return `<h1>${c[0]}</h1><p class="keys">${c[2]}</p><p class="small mute">${ASTRO[i]}</p>
+    ${power?`<p style="color:var(--ochre)">Выпал аркан вашего знака — сегодня ваш день силы.</p>`:""}
+    ${sec("Ваш день",c[3])}${sec("Совет",c[7])}
+    <blockquote>${AFFIRM[i]}</blockquote>
+    ${sec("Вопрос себе",ASK[i])}
+    <div class="facts"><b>${m[0]}:</b> ${m[1]}.<br><b>Число дня ${n}:</b> ${NUM[n]}.</div>
+    <div class="sec" style="margin-top:14px"><div class="lb">Вечером отметьте, совпала ли карта с вашим днём</div>
+      <div class="seg" id="rate">${[["Да",2],["Отчасти",1],["Нет",0]].map(([t,v])=>`<button data-r="${v}" class="${r===v?"on":""}">${t}</button>`).join("")}</div></div>
+    <div class="sec">${streakLine()}</div>
+    <button class="btn" id="goSpread">Сделать расклад на вопрос</button>
+    <button class="btn ghost" id="share">Поделиться картой</button>
+    <p class="foot">Карты — повод задуматься, а не предсказание. Приложение создано для развлечения.</p>`}
+function bindDay(i){
+  const g=$("goSpread");if(g)g.onclick=()=>go("spreads");
+  document.querySelectorAll("#rate button").forEach(b=>b.onclick=()=>{S.rt[today()]=+b.dataset.r;save();
+    document.querySelectorAll("#rate button").forEach(x=>x.classList.toggle("on",x===b));haptic("light")});
+  const s=$("share");if(s)s.onclick=()=>shareLink("Моя карта дня — «"+C[i][0]+"»: "+C[i][2]+". А какая твоя?","r"+uid);
+}
+
+// ---------- «Расклады» ----------
+function renderSpreads(){
+  const open=isPro()||S.cr>0||!S.free;
+  const status=isPro()?`Безлимит до ${fmtDate(today(new Date(S.pro)))}`:S.cr>0?`В запасе ${S.cr} ${plural(S.cr,"расклад","расклада","раскладов")}`:!S.free?"Первый расклад — в подарок":`Расклад — ${PRICE_ONE} ⭐. Безлимит на ${PRO_DAYS} дней — ${PRICE_PRO} ⭐`;
+  const ynFree=S.yn!==today()||isPro();
+  const keys=Object.keys(SPREADS);
+  app.innerHTML=`<h1>Расклады</h1><p class="mute">${status}</p>
+    <p class="small mute it">Сформулируйте вопрос про себя и выберите расклад.</p>
+    ${keys.map(k=>`<div class="opt" data-sp="${k}" tabindex="0"><div class="n">${k==="week"?7:3}</div><div class="d"><b>${SPREADS[k].name}</b><span>${SPREADS[k].desc}</span></div><div class="pr ${open?"":"pay"}">${open?"открыть":PRICE_ONE+" ⭐"}</div></div>`).join("")}
+    <div class="opt" data-sp="yn" tabindex="0"><div class="n">1</div><div class="d"><b>Да или нет</b><span>Одна карта на конкретный вопрос</span></div><div class="pr">${ynFree?"бесплатно":"завтра"}</div></div>
+    ${isPro()?"":`<button class="btn gold" id="buyPro" style="margin-top:20px">Безлимит на ${PRO_DAYS} дней — ${PRICE_PRO} ⭐</button>`}`;
+  app.querySelectorAll(".opt").forEach(o=>o.onclick=()=>{
+    const k=o.dataset.sp;
+    if(k==="yn"){if(!ynFree)return toast("Один вопрос «да или нет» в день. С безлимитом — сколько угодно.");return runYN()}
+    if(isPro())return runSpread(k);
+    if(!S.free){S.free=1;save();return runSpread(k)}
+    if(S.cr>0){S.cr--;save();return runSpread(k)}
+    paywall(()=>{if(!isPro()){S.cr=Math.max(0,S.cr-1);save()}runSpread(k)});
+  });
+  const b=$("buyPro");if(b)b.onclick=()=>buy("pro",()=>{toast("Безлимит подключён");renderSpreads()});
+}
+function weekPos(){const out=[];for(let d=1;d<=7;d++){const x=new Date(Date.now()+d*864e5);
+  const s=x.toLocaleDateString("ru-RU",{weekday:"long",day:"numeric",month:"long"});out.push([s[0].toUpperCase()+s.slice(1),3])}return out}
+function runSpread(k){
+  const sp=SPREADS[k], pos=sp.pos||weekPos(), n=pos.length, ids=draw(n);backBtn("spreads");
+  S.h.unshift([today(),k,...ids]);collect(ids);save();
+  app.innerHTML=`<h1>${sp.name}</h1><p class="mute it">Открывайте карты по очереди, слева направо</p>
+    <div class="cards n${n}">${ids.map((i,x)=>`<div>${cardHTML(i,n>3?"xs":"sm",false)}<div class="lbl">${n>3?pos[x][0].split(",")[0]:pos[x][0]}</div></div>`).join("")}</div>
+    <div id="out"></div><button class="btn ghost" id="back" style="margin-top:18px">К раскладам</button>`;
+  $("back").onclick=()=>go("spreads");
+  const fl=app.querySelectorAll(".flip");
+  fl.forEach((f,x)=>f.onclick=()=>{
+    if(f.classList.contains("open"))return;
+    if(x>0&&!fl[x-1].classList.contains("open"))return toast("Сначала откройте предыдущую карту");
+    f.classList.add("open");haptic();
+    const c=C[ids[x]];
+    let txt=c[pos[x][1]];
+    if(k==="week")txt=txt.replace(/Сегодня/g,"В этот день").replace(/сегодня/g,"в этот день");
+    setTimeout(()=>{$("out").insertAdjacentHTML("beforeend",sec(pos[x][0],txt,c[0]));
+      if(x===n-1)$("out").insertAdjacentHTML("beforeend",`<p class="small mute" style="margin-top:12px">Расклад сохранён в разделе «Мой путь».</p>`)},650);
+  });
+}
+function runYN(){
+  backBtn("spreads");const i=draw(1)[0], c=C[i];S.yn=today();S.h.unshift([today(),"yn",i]);collect([i]);save();
+  const ans={y:"Да",n:"Скорее нет",m:"Пока неясно"}[c[8]];
+  app.innerHTML=`<h1>Да или нет</h1><p class="mute it">Задайте вопрос и нажмите на карту</p>${cardHTML(i,"",false)}<div id="out"></div>
+    <button class="btn ghost" id="back">К раскладам</button>`;
+  $("back").onclick=()=>go("spreads");
+  app.querySelector(".flip").onclick=function(){if(this.classList.contains("open"))return;this.classList.add("open");haptic("heavy");
+    setTimeout(()=>{$("out").innerHTML=`<div class="yn">${ans}</div><h2 style="margin-top:2px">${c[0]}</h2><p class="keys">${c[2]}</p>${sec("Почему",c[9])}${sec("Совет",c[7])}`},700)};
+}
+
+// ---------- оплата ----------
+function paywall(onOk){
+  const m=document.createElement("div");m.className="modal";
+  m.innerHTML=`<div class="sheet"><h2>Открыть расклад</h2>
+    <p class="mute">Подарочный расклад уже использован. Карта дня, колода и вопрос «да или нет» остаются бесплатными.</p>
+    <button class="btn" id="b1">Один расклад — ${PRICE_ONE} ⭐</button>
+    <button class="btn gold" id="b2">Безлимит на ${PRO_DAYS} дней — ${PRICE_PRO} ⭐</button>
+    <button class="btn ghost" id="b0">Не сейчас</button>
+    <p class="small mute c">Бесплатный расклад можно получить за серию из 7 дней или за приглашённого друга.</p></div>`;
+  document.body.appendChild(m);
+  m.querySelector("#b0").onclick=()=>m.remove();
+  m.onclick=e=>{if(e.target===m)m.remove()};
+  m.querySelector("#b1").onclick=()=>buy("one",()=>{m.remove();onOk()});
+  m.querySelector("#b2").onclick=()=>buy("pro",()=>{m.remove();onOk()});
+}
+function grant(kind){if(kind==="pro")S.pro=Math.max(Date.now(),S.pro||0)+PRO_DAYS*864e5;else S.cr=(S.cr||0)+1;save()}
+// Бот после оплаты (или за приглашённого друга) присылает кнопку с отметкой g=вид.номер.подпись.
+// Если окно оплаты закрылось раньше, чем приложение узнало об успехе, покупка зачтётся по этой отметке.
+function redeem(){
+  const g=(Q.get("g")||"").split(".");
+  if(g.length!==3||(g[0]!=="one"&&g[0]!=="pro"))return;
+  const [k,id,sig]=g;
+  if(sig!==hash(k+"|"+id+"|"+uid+"|arkan").toString(36))return;
+  S.u=S.u||[];S.lg=S.lg||[];
+  if(S.u.includes(id))return;
+  S.u.unshift(id);S.u=S.u.slice(0,30);
+  const n=id[0]==="r"?-1:S.lg.indexOf(k);
+  if(n>=0){S.lg.splice(n,1);save();return}  // эта оплата уже зачтена в момент покупки
+  grant(k);
+  setTimeout(()=>toast(id[0]==="r"?"Вам подарок: бесплатный расклад":k==="pro"?"Безлимит подключён":"Расклад добавлен"),400);
+}
+function buy(kind,done){
+  const link=kind==="pro"?P.p:P.s;
+  if(P.demo&&!inTg){grant(kind);return done&&done()}
+  if(!inTg||!link||!tg.openInvoice)return toast("Оплата доступна в приложении внутри Telegram");
+  tg.openInvoice(link,status=>{
+    if(status==="paid"){S.lg=(S.lg||[]).concat(kind).slice(-10);grant(kind);haptic("heavy");done&&done()}
+    else if(status==="failed")toast("Оплата не прошла. Попробуйте ещё раз.");
+  });
+}
+
+// ---------- «Коллекция» ----------
+const CEL=ASTRO.map(a=>a.includes("огня")?0:a.includes("земли")?1:a.includes("воздуха")?2:3);  // стихия каждой карты
+const CREW=[[11,1],[22,3]];  // карт в коллекции -> раскладов в подарок
+const TITLES=["Хранитель огня","Хранитель земли","Хранитель воздуха","Хранитель воды"];
+function collected(){return (S.c||[]).filter(x=>x>0).length}
+function collect(ids){
+  const fresh=[];ids.forEach(i=>{if(!S.c[i])fresh.push(i);S.c[i]=(S.c[i]||0)+1});
+  const n=collected();
+  CREW.forEach(([t,k])=>{if(n>=t&&!S.cw.includes(t)){S.cw.push(t);S.cr=(S.cr||0)+k;
+    setTimeout(()=>toast(t===22?"Вся колода собрана. В подарок — "+k+" расклада":"Половина колоды собрана. В подарок — расклад"),3000)}});
+  return fresh}
+function setDone(e){return CEL.every((x,i)=>x!==e||S.c[i]>0)}
+function renderDeck(){
+  const n=collected(), z=mySign(), mine=z==null?-1:Z[z][2];
+  const next=CREW.find(r=>!S.cw.includes(r[0]));
+  const sets=EL.map((name,e)=>{const all=CEL.filter(x=>x===e).length, got=CEL.filter((x,i)=>x===e&&S.c[i]>0).length;return `${name} — ${got===all?"собрана":got+" из "+all}`}).join(", ");
+  app.innerHTML=`<h1>Коллекция</h1><p class="mute">Собрано ${n} из ${C.length}. Карта попадает в коллекцию, когда выпадает вам в карте дня или в раскладе, — и тогда открываются её значения.</p>
+    <div class="bar"><i style="width:${Math.round(n/C.length*100)}%"></i></div>
+    <p class="small mute">${next?`За ${next[0]} ${next[0]===22?"карты":"карт"} — ${next[1]===1?"расклад":next[1]+" расклада"} в подарок.`:"Все подарки за коллекцию получены."} Стихии: ${sets}.</p>
+    <div class="deck">${C.map((c,i)=>{const k=S.c[i]||0, tier=k>=7?"t3":k>=3?"t2":"";
+      return `<div data-i="${i}">${k?cardHTML(i,"sm static "+tier,true):cardHTML(i,"sm dim",false)}<div class="lbl">${k?(i===mine?"ваш аркан, ":"")+"×"+k:c[0]}</div></div>`}).join("")}</div>
+    <p class="foot">Карта, выпавшая 3 раза, получает серебряную рамку, 7 раз — золотую. За полностью собранную стихию даётся звание в разделе «Мой путь».</p>`;
+  app.querySelectorAll(".deck>div").forEach(d=>d.onclick=()=>renderCard(+d.dataset.i));
+}
+function renderCard(i,from){
+  const c=C[i], k=S.c[i]||0;backBtn(from||"deck");
+  const nav=`<div style="display:flex;gap:10px"><button class="btn ghost" id="prev">${C[(i+21)%22][0]}</button><button class="btn ghost" id="next">${C[(i+1)%22][0]}</button></div>
+    <button class="btn" id="back">Вся коллекция</button>`;
+  if(!k)app.innerHTML=`${cardHTML(i,"dim",false)}<h1>${c[0]}</h1><p class="keys">${c[2]}</p><p class="small mute">${ASTRO[i]}</p>
+    <p>Эта карта вам ещё не выпадала. Её значения откроются, когда она придёт в карте дня или в раскладе.</p>${nav}`;
+  else app.innerHTML=`${cardHTML(i,"static "+(k>=7?"t3":k>=3?"t2":""),true)}<h1>${c[0]}</h1><p class="keys">${c[2]}</p><p class="small mute">${ASTRO[i]}. Выпадала вам ${k} ${plural(k,"раз","раза","раз")}</p>
+    <blockquote>${AFFIRM[i]}</blockquote>
+    ${sec("В ситуации",c[9])}${sec("В любви",c[6])}${sec("В работе и деньгах",c[10])}${sec("Совет карты",c[7])}
+    ${sec("На вопрос «да или нет»",{y:"Да.",n:"Скорее нет.",m:"Пока неясно."}[c[8]])}${nav}`;
+  $("prev").onclick=()=>renderCard((i+21)%22);$("next").onclick=()=>renderCard((i+1)%22);$("back").onclick=()=>go("deck");
+  window.scrollTo(0,0);
+}
+
+// ---------- «Мой путь» ----------
+function renderMe(){
+  const T={d:"Карта дня",yn:"Да или нет",time:"Три карты",love:"Отношения",work:"Работа и деньги",choice:"Выбор",week:"Неделя"};
+  const rated=Object.values(S.rt||{}), hit=rated.length>=3?Math.round(rated.reduce((a,b)=>a+b,0)/(rated.length*2)*100)+"%":"—";
+  const cnt={};S.h.filter(e=>e[1]==="d").forEach(e=>cnt[e[2]]=(cnt[e[2]]||0)+1);
+  const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
+  const R={2:"совпала",1:"отчасти",0:"не совпала"};
+  let birth;
+  if(S.bd){const b=birthCard(S.bd), c=C[b];
+    birth=`<div class="birth"><div data-i="${b}" id="bc" style="cursor:pointer">${cardHTML(b,"sm static",true)}</div><div><b style="font-size:20px">${c[0]}</b><p class="small mute" style="margin:4px 0 0">Темы этой карты — ${c[2]} — проходят через всю вашу жизнь.</p></div></div>
+      <p class="it">Напутствие карты: ${c[7][0].toLowerCase()+c[7].slice(1)}</p>
+      <button class="btn ghost" id="bdReset">Изменить дату рождения</button>`}
+  else birth=`<p class="mute">Карту рождения считают по дате: она показывает главные темы вашей жизни. Дата хранится только в вашем Telegram.</p>
+      <input type="date" id="bd" max="${today()}" min="1920-01-01"><button class="btn" id="bdSave">Узнать карту рождения</button>`;
+  const access=isPro()?`Безлимит на расклады до ${fmtDate(today(new Date(S.pro)))}.`:S.cr>0?`В запасе ${S.cr} ${plural(S.cr,"расклад","расклада","раскладов")}.`:"Платных раскладов в запасе нет.";
+  app.innerHTML=`<h1>Мой путь</h1>
+    <div class="stats"><div><b>${S.st||0}</b><span>${plural(S.st||0,"день","дня","дней")} подряд</span></div><div><b>${S.h.length}</b><span>${plural(S.h.length,"запись","записи","записей")} в дневнике</span></div><div><b>${hit}</b><span>совпадений с днём</span></div></div>
+    ${top&&top[1]>1?`<p class="small mute">Чаще всего вам выпадает ${C[top[0]][0]} — ${top[1]} ${plural(top[1],"раз","раза","раз")}.</p>`:""}
+    ${rated.length<3?`<p class="small mute">Процент совпадений появится после трёх вечерних отметок.</p>`:""}
+    ${TITLES.filter((t,e)=>setDone(e)).length?`<p>Ваши звания: ${TITLES.filter((t,e)=>setDone(e)).join(", ")}${collected()===22?", Мастер колоды":""}.</p>`:""}
+    <h2>Друзья</h2><p class="mute">${F.length?`У вас ${F.length} ${plural(F.length,"друг","друга","друзей")}: их карты дня, серии и совместимость с вами.`:"Добавьте друзей, чтобы видеть их карту дня, сравнивать коллекции и проверять совместимость."}</p>
+    <button class="btn" id="friends">${F.length?"Открыть список друзей":"Пригласить друга"}</button>
+    <h2>Карта рождения</h2>${birth}
+    <h2>Доступ</h2><p>${access}</p>${isPro()?"":`<button class="btn gold" id="buyPro">Безлимит на ${PRO_DAYS} дней — ${PRICE_PRO} ⭐</button>`}
+    <p class="small mute">Подарочный расклад даётся за серию из 7, 14 и 30 дней и за каждого друга, который открыл карты по вашей ссылке.</p>
+    <h2>Дневник</h2>${S.h.length?S.h.map(e=>`<div class="hist"><small>${fmtDate(e[0])}, ${(T[e[1]]||"").toLowerCase()}${e[1]==="d"&&S.rt[e[0]]!==undefined?", "+R[S.rt[e[0]]]:""}</small>${e.slice(2).map(i=>C[i][0]).join(", ")}</div>`).join(""):`<p class="mute">Здесь появятся ваши карты и расклады.</p><button class="btn" id="g">Открыть карту дня</button>`}
+    <p class="foot">Хранятся последние 40 записей. Приложение создано для развлечения; толкования не являются советом по здоровью, финансам и праву.</p>`;
+  const g=$("g");if(g)g.onclick=()=>go("day");
+  const bp=$("buyPro");if(bp)bp.onclick=()=>buy("pro",()=>{toast("Безлимит подключён");renderMe()});
+  const bs=$("bdSave");if(bs)bs.onclick=()=>{const v=$("bd").value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v)||v>today())return toast("Укажите дату рождения");S.bd=v;save();haptic();renderMe()};
+  const br=$("bdReset");if(br)br.onclick=()=>{S.bd="";save();renderMe()};
+  const bc=$("bc");if(bc)bc.onclick=()=>renderCard(+bc.dataset.i,"me");
+  $("friends").onclick=()=>renderFriends();
+}
+
+// ---------- звёзды: данные ----------
+const EL=["Огонь","Земля","Воздух","Вода"], ELG=["огня","земли","воздуха","воды"];
+const ZG="♈♉♊♋♌♍♎♏♐♑♒♓";
+// [знак, управитель, аркан, суть (Солнце), чувства (Луна), впечатление (асцендент), даты]
+const Z=[
+["Овен","Марс",4,"прямота, смелость и желание быть первым","В чувствах вы вспыхиваете мгновенно и так же быстро остываете.","энергичным и решительным","21 марта — 19 апреля"],
+["Телец","Венера",5,"надёжность, вкус к жизни и упорство","Вам нужны покой, уют и постоянство — перемены вы принимаете не сразу.","спокойным и основательным","20 апреля — 20 мая"],
+["Близнецы","Меркурий",6,"любопытство, лёгкость и дар слова","Чувства вы проживаете через разговор: вам нужно выговориться.","общительным и быстрым на ум","21 мая — 21 июня"],
+["Рак","Луна",7,"забота, память и привязанность к своим","Вы чувствуете глубоко и долго помните и доброе, и обидное.","мягким и немного закрытым","22 июня — 22 июля"],
+["Лев","Солнце",8,"щедрость, яркость и потребность творить","Вам важно, чтобы вас видели и ценили; равнодушие ранит сильнее критики.","уверенным и заметным","23 июля — 22 августа"],
+["Дева","Меркурий",9,"внимание к деталям, польза и порядок","Вы успокаиваетесь, когда всё разложено по местам и понятно, что делать.","сдержанным и аккуратным","23 августа — 22 сентября"],
+["Весы","Венера",11,"чувство меры, такт и стремление к гармонии","Вам тяжело, когда рядом ссорятся: вы ищете равновесие в отношениях.","обаятельным и дипломатичным","23 сентября — 23 октября"],
+["Скорпион","Плутон",13,"глубина, воля и умение идти до конца","Вы чувствуете сильно, всё или ничего, и не прощаете фальши.","проницательным и немного загадочным","24 октября — 22 ноября"],
+["Стрелец","Юпитер",14,"оптимизм, прямота и тяга к новым горизонтам","Вам нужны свобода и смысл: в тесных рамках чувства гаснут.","открытым и лёгким на подъём","23 ноября — 21 декабря"],
+["Козерог","Сатурн",15,"целеустремлённость, выдержка и ответственность","Чувства вы держите при себе и доказываете их делом, а не словами.","серьёзным и собранным","22 декабря — 19 января"],
+["Водолей","Уран",17,"независимость, оригинальность и вера в идеи","Вам нужна дистанция: близость для вас начинается с дружбы.","необычным и немного отстранённым","20 января — 18 февраля"],
+["Рыбы","Нептун",18,"сочувствие, воображение и тонкая интуиция","Вы впитываете настроение окружающих и нуждаетесь в тишине, чтобы прийти в себя.","мечтательным и мягким","19 февраля — 20 марта"]];
+const zel=i=>i%4;
+// Гороскоп дня: [ваша стихия][стихия знака, в котором сегодня Луна]
+const MOONEL=[
+["Луна в огненном знаке усиливает вашу стихию: энергии много, беритесь за смелое.","Луна в земном знаке притормаживает ваш напор: день для практичных дел и для того, чтобы довести начатое.","Воздушная Луна раздувает ваш огонь: удачны встречи, идеи и переговоры.","Водная Луна остужает пыл: не давите, прислушайтесь к чувствам — своим и чужим."],
+["Огненная Луна торопит вас: позвольте себе один быстрый, непривычный шаг.","Луна в земном знаке — ваша родная стихия: день надёжных решений, денег и порядка.","Воздушная Луна уводит от дел к разговорам: планы обсудить полезно, а подписывать лучше позже.","Водная Луна питает вашу землю: хороший день для близких, дома и заботы о себе."],
+["Огненная Луна даёт вашим идеям ход: от слов пора переходить к делу.","Земная Луна просит конкретики: выберите одну мысль и воплотите её.","Луна в воздушном знаке — ваша стихия: общение, учёба и новости сегодня особенно удачны.","Водная Луна делает день чувствительным: меньше анализа, больше внимания к настроению близких."],
+["Огненная Луна может задеть резкостью: берегите границы и не принимайте чужую спешку на свой счёт.","Земная Луна даёт вам опору: хороший день, чтобы привести в порядок дела и финансы.","Воздушная Луна предлагает выговориться: назовите чувства словами — станет легче.","Луна в водном знаке — ваша стихия: интуиция обострена, доверяйте первому ощущению."]];
+// Совместимость по стихиям: [балл, описание, совет]
+const PAIR={
+"00":[85,"Два огня — яркий, страстный союз, в котором никому не скучно. Риск один: оба хотят быть первыми.","Договоритесь, кто ведёт в каком деле."],
+"11":[85,"Надёжный и спокойный союз: общие цели, быт и планы на годы вперёд. Риск — застой и привычка.","Раз в месяц делайте что-нибудь впервые."],
+"22":[82,"Лёгкость, разговоры до утра и общие интересы. Риск — остаться друзьями, которым некогда чувствовать.","Говорите не только об идеях, но и о чувствах."],
+"33":[85,"Вы понимаете друг друга без слов, связь глубокая. Риск — утонуть в обидах и настроениях.","Проговаривайте обиды сразу, не копите."],
+"02":[90,"Воздух раздувает огонь: вы вдохновляете друг друга и легко двигаетесь вперёд. Одна из самых живых пар.","Доводите общие затеи до конца."],
+"13":[90,"Вода питает землю: забота, надёжность и тёплый дом. Одна из самых устойчивых пар.","Не забывайте удивлять друг друга."],
+"01":[58,"Огонь спешит, земля взвешивает. Вместе вы сильны, когда один зажигает, а другой строит, — но темп придётся согласовывать.","Уважайте чужую скорость."],
+"03":[52,"Страсть и глубина, пар и буря. Притяжение сильное, но огню тесно в эмоциях воды, а воде больно от резкости огня.","Огню — мягче слова, воде — меньше молчаливых обид."],
+"12":[55,"Воздух витает в идеях, земля стоит на фактах. Вы хорошо дополняете друг друга, если не пытаться переделать.","Разделите роли: один придумывает, другой воплощает."],
+"23":[57,"Воздух объясняет, вода чувствует. Вам интересно вместе, но говорите вы на разных языках.","Воздуху — слушать без советов, воде — говорить прямо."]};
+const ELTEXT=["Вы действуете раньше, чем успеваете засомневаться. Вас заряжают вызов, скорость и возможность вести за собой; скука для вас тяжелее риска.",
+"Вы доверяете тому, что можно потрогать и проверить. Ваша сила — в терпении, практичности и умении доводить дело до конца.",
+"Вы живёте идеями и разговорами. Вам важно понимать, обсуждать, связывать людей и мысли; рутина вас душит.",
+"Вы считываете настроение раньше слов. Ваша сила — в сочувствии, интуиции и глубине, а слабость в том, что чужое вы принимаете как своё."];
+// Тест «Ваша стихия»: ответы в порядке огонь, земля, воздух, вода
+const QUIZ=[
+["Выходной без планов. Что делаете?","Срываюсь в поездку или на активный отдых","Занимаюсь домом и вкусно готовлю","Встречаюсь с друзьями, иду туда, где люди","Остаюсь наедине с книгой, фильмом или музыкой"],
+["В споре вы скорее…","Горячо отстаиваю своё","Привожу факты и стою на них","С интересом выслушиваю другую сторону","Чувствую, что человеку важно, и сглаживаю"],
+["Что для вас главное в работе?","Вызов и возможность побеждать","Стабильность и видимый результат","Новые идеи и свобода","Смысл и люди рядом"],
+["Как вы принимаете важные решения?","Быстро, по первому импульсу","Взвешиваю и считаю","Обсуждаю с другими и сравниваю варианты","Прислушиваюсь к ощущению внутри"],
+["Что выматывает вас сильнее всего?","Ожидание и бездействие","Хаос и неопределённость","Рутина и однообразие","Холодность и конфликты"],
+["В компании вы…","Заводила и центр внимания","Тот, на кого можно положиться","Тот, кто всех знакомит и шутит","Тот, кому рассказывают личное"],
+["Подарок мечты — это…","Приключение: прыжок, гонка, поход","Качественная вещь на годы","Путешествие или курс чего-то нового","Что-то сделанное специально для меня"]];
+// [город, широта, долгота, часовой пояс сейчас, Россия]
+const CITY=[["Москва",55.75,37.62,3,1],["Санкт-Петербург",59.94,30.31,3,1],["Новосибирск",55.03,82.92,7,1],["Екатеринбург",56.84,60.61,5,1],["Казань",55.79,49.12,3,1],["Нижний Новгород",56.33,44,3,1],["Челябинск",55.16,61.4,5,1],["Самара",53.2,50.15,4,1],["Омск",54.99,73.37,6,1],["Ростов-на-Дону",47.23,39.72,3,1],["Уфа",54.74,55.97,5,1],["Красноярск",56.01,92.87,7,1],["Воронеж",51.67,39.2,3,1],["Пермь",58.01,56.25,5,1],["Волгоград",48.71,44.51,3,1],["Краснодар",45.04,38.98,3,1],["Саратов",51.53,46.03,4,1],["Тюмень",57.15,65.53,5,1],["Иркутск",52.29,104.3,8,1],["Хабаровск",48.48,135.08,10,1],["Владивосток",43.12,131.89,10,1],["Калининград",54.71,20.51,2,1],["Набережные Челны",55.74,52.4,3,1],["Сочи",43.6,39.73,3,1],["Минск",53.9,27.57,3,0],["Киев",50.45,30.52,2,0],["Алматы",43.24,76.95,5,0],["Астана",51.17,71.43,5,0],["Ташкент",41.3,69.24,5,0],["Бишкек",42.87,74.59,6,0],["Тбилиси",41.72,44.79,4,0],["Ереван",40.18,44.51,4,0],["Баку",40.41,49.87,4,0],["Кишинёв",47.01,28.86,2,0]];
+
+// ---------- звёзды: расчёты ----------
+const rad=Math.PI/180, n360=x=>((x%360)+360)%360;
+const jd=ms=>ms/864e5+2440587.5;
+function sunLon(ms){const d=jd(ms)-2451545,g=(357.528+0.9856003*d)*rad;return n360(280.460+0.9856474*d+1.915*Math.sin(g)+0.020*Math.sin(2*g))}
+function moonLon(ms){const d=jd(ms)-2451545,L=218.316+13.176396*d,M=(134.963+13.064993*d)*rad,D=(297.850+12.190749*d)*rad,Ms=(357.528+0.9856003*d)*rad,Fq=(93.272+13.229350*d)*rad;
+  return n360(L+6.289*Math.sin(M)-1.274*Math.sin(M-2*D)+0.658*Math.sin(2*D)+0.214*Math.sin(2*M)-0.186*Math.sin(Ms)-0.114*Math.sin(2*Fq)-0.059*Math.sin(2*M-2*D)-0.057*Math.sin(M-2*D+Ms)+0.053*Math.sin(M+2*D)+0.046*Math.sin(2*D-Ms)+0.041*Math.sin(M-Ms)-0.035*Math.sin(D)-0.031*Math.sin(M+Ms))}
+function ascLon(ms,lat,lon){const d=jd(ms)-2451545,ra=n360(280.46061837+360.98564736629*d+lon)*rad,e=(23.4393-3.563e-7*d)*rad;
+  return n360(Math.atan2(Math.cos(ra),-(Math.sin(ra)*Math.cos(e)+Math.tan(lat*rad)*Math.sin(e)))/rad)}
+const signOf=lon=>Math.floor(n360(lon)/30);
+function moon(){const a=n360(moonLon(Date.now())-sunLon(Date.now()));return MOON[Math.round(a/45)%8]}
+function lastSun(y,m){const d=new Date(Date.UTC(y,m+1,0));return d.getUTCDate()-d.getUTCDay()}
+// Часовой пояс на дату рождения: нынешний пояс города плюс летнее время (1981–2010; в России ещё 2011–2014).
+function guessTz(ci,bd){const c=CITY[ci];if(!c||!bd)return 3;const [y,m,d]=bd.split("-").map(Number), md=m*100+d;let tz=c[3];
+  if(y>=1981&&y<=2010){if(md>=300+lastSun(y,2)&&md<(y<1996?900+lastSun(y,8):1000+lastSun(y,9)))tz+=1}
+  else if(c[4]&&((y===2011&&md>=327)||y===2012||y===2013||(y===2014&&md<1026)))tz+=1;
+  return tz}
+function birthMs(time){const [y,m,d]=S.bd.split("-").map(Number), [hh,mm]=(time||"12:00").split(":").map(Number);
+  return Date.UTC(y,m-1,d,hh,mm)-(S.bt?+S.tz:3)*36e5}
+function natal(){
+  if(!S.bd)return null;
+  const ms=birthMs(S.bt), r={sun:signOf(sunLon(ms)),moon:signOf(moonLon(ms)),moonAlt:-1,asc:-1};
+  if(!S.bt){const a=signOf(moonLon(birthMs("00:00"))), b=signOf(moonLon(birthMs("23:59")));if(a!==b){r.moon=a;r.moonAlt=b}}
+  else{const c=CITY[S.ci], lat=c?c[1]:+S.la, lon=c?c[2]:+S.lo;if(isFinite(lat)&&isFinite(lon)&&Math.abs(lat)<66)r.asc=signOf(ascLon(ms,lat,lon))}
+  return r}
+function mySign(){return S.bd?signOf(sunLon(birthMs(S.bt))):null}
+function horo(z){const mz=signOf(moonLon(Date.now())), h=k=>hash(z+"|"+today()+"|"+k);
+  return {mz,text:MOONEL[zel(z)][zel(mz)],love:h("l")%3+3,work:h("w")%3+3,energy:h("e")%3+3,num:h("n")%9+1}}
+function compat(a,b){
+  const key=[zel(a),zel(b)].sort().join(""), p=PAIR[key], diff=Math.abs(a-b);let s=p[0], note;
+  if(diff===0){s-=5;note="Один знак: вы узнаёте друг в друге себя — вместе с собственными недостатками."}
+  else if(diff===6){s+=12;note="Противоположные знаки: сильное притяжение и чувство, что другой даёт недостающее."}
+  else if(diff===3||diff===9){s-=8;note="Знаки в напряжённом аспекте: искры обеспечены, равнодушия не будет."}
+  else if(diff===2||diff===10){s+=3;note="Знаки в дружественном аспекте: вам легко договариваться."}
+  else if(diff===4||diff===8)note="Знаки одной стихии: вы понимаете друг друга с полуслова."
+  else note="Знаки мало похожи по характеру: вам придётся учиться друг у друга.";
+  s+=hash("c"+Math.min(a,b)+"|"+Math.max(a,b))%7-3;
+  return {score:Math.max(35,Math.min(97,s)),text:p[1],adv:p[2],note}}
+const dots=n=>`<span class="dots">${"●".repeat(n)}${"○".repeat(5-n)}</span>`;
+const zopts=sel=>Z.map((z,i)=>`<option value="${i}" ${i===sel?"selected":""}>${z[0]} (${z[6]})</option>`).join("");
+const signFromDate=v=>{const [y,m,d]=v.split("-").map(Number);return signOf(sunLon(Date.UTC(y,m-1,d,9)))};
+
+// ---------- «Звёзды» ----------
+function renderStars(){
+  if(!S.bd){
+    app.innerHTML=`<h1>Звёзды</h1><p class="mute">Укажите дату рождения — и здесь появятся ваш знак, гороскоп на день, совместимость и натальная тройка: Солнце, Луна и асцендент. Дата хранится только в вашем Telegram.</p>
+      <input type="date" id="bd" max="${today()}" min="1920-01-01"><button class="btn" id="bdSave">Показать мой знак</button>
+      <button class="btn ghost" id="compat">Проверить совместимость двух знаков</button>
+      <button class="btn ghost" id="quiz">Тест «Ваша стихия»</button><button class="btn ghost" id="signs">Все знаки зодиака</button>`;
+    $("bdSave").onclick=()=>{const v=$("bd").value;if(!/^\d{4}-\d{2}-\d{2}$/.test(v)||v>today())return toast("Укажите дату рождения");S.bd=v;save();haptic();renderStars()};
+  }else{
+    const n=natal(), z=n.sun, h=horo(z);
+    app.innerHTML=`<div class="top"><b>${longDate()}</b><span>Луна в знаке ${Z[h.mz][0]}</span></div>
+      <h1>${ZG[z]}︎ ${Z[z][0]}</h1><p class="keys">${Z[z][3]}</p>
+      <p class="small mute">Стихия ${ELG[zel(z)]}, управитель — ${Z[z][1]}. Аркан вашего знака — ${C[Z[z][2]][0]}: когда он выпадает картой дня, это ваш день силы.</p>
+      ${sec("Сегодня для вас",h.text)}
+      <div class="facts"><b>Любовь</b> ${dots(h.love)}<br><b>Дела</b> ${dots(h.work)}<br><b>Силы</b> ${dots(h.energy)}<br><b>Число удачи:</b> ${h.num}</div>
+      <h2>Натальная тройка</h2>
+      ${sec("Солнце в знаке "+Z[n.sun][0],"Ваша суть — "+Z[n.sun][3]+".")}
+      ${n.moonAlt>=0?sec("Луна в знаке "+Z[n.moon][0]+" или "+Z[n.moonAlt][0],"В день вашего рождения Луна переходила из знака в знак. Укажите время рождения, чтобы узнать точно."):sec("Луна в знаке "+Z[n.moon][0],Z[n.moon][4])}
+      ${n.asc>=0?sec("Асцендент в знаке "+Z[n.asc][0],"Со стороны вы кажетесь "+Z[n.asc][5]+" человеком."):`<p class="small mute">Асцендент — знак, который восходил над горизонтом в минуту вашего рождения. Чтобы его узнать, нужны время и город.</p>`}
+      <button class="btn ghost" id="natal">${S.bt?"Изменить время и город рождения":"Узнать асцендент"}</button>
+      <button class="btn" id="compat">Проверить совместимость</button>
+      <button class="btn ghost" id="quiz">Тест «Ваша стихия»${S.q!=null?": "+EL[S.q].toLowerCase():""}</button>
+      <button class="btn ghost" id="signs">Все знаки зодиака</button>
+      <p class="foot">Положения Солнца, Луны и асцендента считаются по упрощённым астрономическим формулам; у границ знаков возможна неточность. Гороскоп — для развлечения.</p>`;
+    $("natal").onclick=renderNatalForm;
+  }
+  $("compat").onclick=()=>renderCompat();$("quiz").onclick=()=>renderQuiz();$("signs").onclick=renderSigns;
+}
+function renderNatalForm(){
+  backBtn("stars");
+  app.innerHTML=`<h1>Время и место рождения</h1><p class="mute">Асцендент меняется примерно каждые два часа, поэтому важны точное время и верный часовой пояс.</p>
+    <label class="f">Дата рождения</label><input type="date" id="bd" value="${S.bd}" max="${today()}" min="1920-01-01">
+    <label class="f">Время рождения</label><input type="time" id="bt" value="${S.bt||""}">
+    <label class="f">Город</label><select id="ci">${CITY.map((c,i)=>`<option value="${i}" ${i===+S.ci?"selected":""}>${c[0]}</option>`).join("")}<option value="-1" ${+S.ci===-1?"selected":""}>Другой город</option></select>
+    <div id="geo" style="display:none"><label class="f">Широта, градусы (север — плюс)</label><input type="number" id="la" step="0.01" value="${S.la||""}">
+      <label class="f">Долгота, градусы (восток — плюс)</label><input type="number" id="lo" step="0.01" value="${S.lo||""}"></div>
+    <label class="f">Часовой пояс в день рождения, UTC+</label><input type="number" id="tz" step="0.5" value="${S.bt?S.tz:guessTz(+S.ci,S.bd)}">
+    <p class="small mute">Пояс подставляется по городу с учётом летнего времени, которое действовало в 1981–2010 годах. Если знаете точнее — поправьте.</p>
+    <button class="btn" id="ok">Рассчитать</button><button class="btn ghost" id="back">Назад</button>`;
+  const upd=()=>{const ci=+$("ci").value;$("geo").style.display=ci===-1?"block":"none";if(ci>=0)$("tz").value=guessTz(ci,$("bd").value)};
+  $("ci").onchange=upd;$("bd").onchange=upd;upd();if(S.bt)$("tz").value=S.tz;
+  $("back").onclick=()=>go("stars");
+  $("ok").onclick=()=>{
+    const bd=$("bd").value, bt=$("bt").value, ci=+$("ci").value, tz=parseFloat($("tz").value);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(bd)||bd>today())return toast("Укажите дату рождения");
+    if(!/^\d{2}:\d{2}$/.test(bt))return toast("Укажите время рождения");
+    if(!isFinite(tz)||tz<-12||tz>14)return toast("Проверьте часовой пояс");
+    if(ci===-1){const la=parseFloat($("la").value), lo=parseFloat($("lo").value);
+      if(!isFinite(la)||!isFinite(lo)||Math.abs(la)>=66||Math.abs(lo)>180)return toast("Укажите широту (до 66°) и долготу");S.la=la;S.lo=lo}
+    S.bd=bd;S.bt=bt;S.ci=ci;S.tz=tz;save();haptic();go("stars");
+  };
+}
+function renderSigns(){
+  backBtn("stars");
+  app.innerHTML=`<h1>Знаки зодиака</h1><p class="mute">Нажмите на знак, чтобы проверить совместимость с ним.</p>`+
+    Z.map((z,i)=>`<div class="row" data-z="${i}"><div class="g">${ZG[i]}︎</div><div class="d"><b>${z[0]}</b><span>${z[6]}. Стихия ${ELG[zel(i)]}, ${z[1]}. Аркан — ${C[z[2]][0]}.</span><span>${z[3][0].toUpperCase()+z[3].slice(1)}.</span></div></div>`).join("")+
+    `<button class="btn ghost" id="back" style="margin-top:16px">К звёздам</button>`;
+  app.querySelectorAll(".row").forEach(r=>r.onclick=()=>renderCompat(+r.dataset.z));
+  $("back").onclick=()=>go("stars");
+}
+function compatHTML(a,b,nameB){
+  const r=compat(a,b);
+  return `<div class="big">${r.score}%</div><h2 style="margin-top:0">${Z[a][0]} и ${nameB?esc(nameB)+" ("+Z[b][0]+")":Z[b][0]}</h2>
+    <p class="small mute">${EL[zel(a)]} и ${EL[zel(b)].toLowerCase()}. Арканы пары — ${C[Z[a][2]][0]} и ${C[Z[b][2]][0]}.</p>
+    ${sec("Что между вами",r.text)}${sec("Как сочетаются знаки",r.note)}${sec("Совет паре",r.adv)}`;
+}
+function renderCompat(pre,friend){
+  backBtn(friend?"me":"stars");const me=mySign();
+  app.innerHTML=`<h1>Совместимость</h1><p class="mute">По знакам зодиака: стихии, аспект между знаками и арканы пары.</p>
+    <label class="f">Ваш знак</label><select id="za">${zopts(me==null?0:me)}</select>
+    <label class="f">Знак партнёра или друга</label><select id="zb">${zopts(pre==null?6:pre)}</select>
+    <label class="f">или дата его рождения</label><input type="date" id="pd" max="${today()}" min="1920-01-01">
+    ${F.filter(f=>f.z>=0).length?`<label class="f">Друзья</label><div class="chips">${F.filter(f=>f.z>=0).map(f=>`<button data-z="${f.z}" data-n="${esc(f.n)}">${esc(f.n)}</button>`).join("")}</div>`:""}
+    <button class="btn" id="ok">Узнать совместимость</button><div id="out"></div>
+    <button class="btn ghost" id="back">${friend?"К друзьям":"К звёздам"}</button>`;
+  let nm=friend||"";
+  $("pd").onchange=()=>{const v=$("pd").value;if(/^\d{4}-\d{2}-\d{2}$/.test(v)){$("zb").value=signFromDate(v);nm=""}};
+  $("zb").onchange=()=>{nm=""};
+  app.querySelectorAll(".chips button").forEach(b=>b.onclick=()=>{$("zb").value=b.dataset.z;nm=b.dataset.n;show()});
+  const show=()=>{const a=+$("za").value, b=+$("zb").value, r=compat(a,b);haptic();
+    $("out").innerHTML=compatHTML(a,b,nm)+`<button class="btn ghost" id="shareC">Поделиться результатом</button>`;
+    $("shareC").onclick=()=>shareLink("Наша совместимость — "+r.score+"%: "+Z[a][0]+" и "+Z[b][0]+". Проверь свою","r"+uid);
+    $("out").scrollIntoView({behavior:"smooth",block:"start"})};
+  $("ok").onclick=show;$("back").onclick=()=>friend?renderFriends():go("stars");
+  if(pre!=null||friend)show();
+}
+function shareLink(text,start){
+  const url=P.b?"https://t.me/"+P.b+"?start="+start:location.href.split("?")[0];
+  const link="https://t.me/share/url?url="+encodeURIComponent(url)+"&text="+encodeURIComponent(text);
+  if(inTg)tg.openTelegramLink(link);else window.open(link,"_blank");
+}
+function renderQuiz(){
+  backBtn("stars");const score=[0,0,0,0];let q=0;
+  const step=()=>{
+    if(q>=QUIZ.length){const e=score.indexOf(Math.max(...score)), z=mySign();S.q=e;save();haptic("heavy");
+      const cards=C.map((c,i)=>CEL[i]===e?c[0]:null).filter(Boolean).join(", ");
+      app.innerHTML=`<p class="mute it">Ваша стихия по характеру</p><div class="big" style="font-size:48px">${EL[e]}</div>
+        <p>${ELTEXT[e]}</p>
+        ${sec("Ваши арканы","Карты стихии "+ELG[e]+": "+cards+". В раскладах они говорят с вами на одном языке.")}
+        ${z==null?"":sec("Характер и знак",zel(z)===e?`По знаку вы ${Z[z][0]} — тоже стихия ${ELG[e]}. Характер и знак совпадают: вы цельная натура.`:`По знаку вы ${Z[z][0]}, стихия ${ELG[zel(z)]}, а по характеру — ${EL[e].toLowerCase()}. Такое сочетание даёт вам больше гибкости, чем типичному представителю знака.`)}
+        <p class="small mute">Ответы: огонь — ${score[0]}, земля — ${score[1]}, воздух — ${score[2]}, вода — ${score[3]}.</p>
+        <button class="btn ghost" id="shareQ">Поделиться результатом</button><button class="btn" id="back">К звёздам</button><button class="btn ghost" id="again">Пройти ещё раз</button>`;
+      $("shareQ").onclick=()=>shareLink("Моя стихия по характеру — "+EL[e].toLowerCase()+". А твоя?","r"+uid);
+      $("back").onclick=()=>go("stars");$("again").onclick=renderQuiz;window.scrollTo(0,0);return}
+    const Qn=QUIZ[q], order=draw(4).map(x=>x%4), seen=new Set(), opts=[];
+    [...order,0,1,2,3].forEach(x=>{if(!seen.has(x)){seen.add(x);opts.push(x)}});
+    app.innerHTML=`<p class="mute small">Вопрос ${q+1} из ${QUIZ.length}</p><div class="bar"><i style="width:${Math.round(q/QUIZ.length*100)}%"></i></div>
+      <h1 style="font-size:24px">${Qn[0]}</h1>${opts.map(x=>`<button class="ans" data-e="${x}">${Qn[x+1]}</button>`).join("")}`;
+    app.querySelectorAll(".ans").forEach(b=>b.onclick=()=>{score[+b.dataset.e]++;q++;haptic("light");step()});
+    window.scrollTo(0,0);
+  };step();
+}
+
+// ---------- друзья ----------
+// Сервера нет, поэтому друг добавляется по ссылке: в ней зашиты знак, карта рождения, серия и размер коллекции
+// на день отправки. Карту дня друга приложение считает само — она зависит только от его номера и даты.
+function myCode(){const z=mySign(), b=S.bd?birthCard(S.bd):null;
+  return uid.toString(36)+"_"+(z==null?"x":String.fromCharCode(97+z))+(b==null?"x":b.toString(36))+Math.min(S.st||0,46655).toString(36)+"_"+collected().toString(36)}
+function addFriend(code,name){
+  const m=/^([0-9a-z]{1,11})_([a-lx])([0-9a-lx])([0-9a-z]{1,3})_([0-9a-m])$/.exec(code||"");if(!m)return null;
+  const id=parseInt(m[1],36);if(!id||id===uid)return null;
+  const f={i:id,n:(name||"Друг").slice(0,20),z:m[2]==="x"?-1:m[2].charCodeAt(0)-97,b:m[3]==="x"?-1:parseInt(m[3],36),s:parseInt(m[4],36),c:parseInt(m[5],36),d:today()};
+  F=F.filter(x=>x.i!==id);F.unshift(f);F=F.slice(0,20);saveF();return f}
+function renderFriends(){
+  backBtn("me");const me=mySign();
+  const rowsAll=[{me:1,n:"Вы",z:me==null?-1:me,s:S.st||0,c:collected(),i:uid}].concat(F).sort((a,b)=>b.c-a.c||b.s-a.s);
+  app.innerHTML=`<h1>Друзья</h1><p class="mute">${F.length?"Рейтинг по размеру коллекции. Карта дня друга показана на сегодня; серия и коллекция — на день, когда он прислал ссылку.":"Отправьте другу свою ссылку. Когда он пришлёт свою в ответ, здесь появятся его карта дня, серия, коллекция и ваша совместимость."}</p>
+    ${F.length?rowsAll.map((f,k)=>`<div class="row" ${f.me?"":`data-i="${f.i}"`}><div class="g">${k+1}</div><div class="d"><b>${esc(f.n)}${f.z>=0?" "+ZG[f.z]+"︎":""}</b>
+      <span>${f.me?"":"Сегодня: "+C[dayCardOf(f.i,today())][0]+". "}Серия ${f.s} ${plural(f.s,"день","дня","дней")}${f.me||f.d===today()?"":" на "+fmtDate(f.d).slice(0,5)}</span></div><div class="v">${f.c}/22</div></div>`).join(""):""}
+    <button class="btn" id="inv" style="margin-top:18px">Отправить свою ссылку другу</button>
+    <button class="btn ghost" id="back">Назад</button>
+    <p class="foot">В ссылке передаются только знак зодиака, карта рождения, серия и число собранных карт. Дата рождения и дневник остаются у вас.</p>`;
+  app.querySelectorAll(".row[data-i]").forEach(r=>r.onclick=()=>renderFriend(+r.dataset.i));
+  $("inv").onclick=()=>{if(!uid)return toast("Ссылка для друзей работает в приложении внутри Telegram");
+    shareLink("Добавь меня в друзья в «Аркане» — сравним карты дня и совместимость","f"+myCode())};
+  $("back").onclick=()=>go("me");
+}
+function renderFriend(id){
+  const f=F.find(x=>x.i===id);if(!f)return renderFriends();
+  backBtn("me");const i=dayCardOf(f.i,today()), me=mySign(), mineToday=dayCard();
+  app.innerHTML=`<h1>${esc(f.n)}</h1><p class="mute">${f.z>=0?Z[f.z][0]+", стихия "+ELG[zel(f.z)]:"Знак не указан"}${f.b>=0?". Карта рождения — "+C[f.b][0]:""}.</p>
+    <div class="stats"><div><b>${f.s}</b><span>${plural(f.s,"день","дня","дней")} подряд</span></div><div><b>${f.c}/22</b><span>карт в коллекции</span></div><div><b>${me!=null&&f.z>=0?compat(me,f.z).score+"%":"—"}</b><span>совместимость</span></div></div>
+    <p class="small mute">Серия и коллекция — на ${fmtDate(f.d)}. Они обновятся, когда друг пришлёт новую ссылку.</p>
+    <h2>Карта дня сегодня</h2>
+    <div class="birth"><div>${cardHTML(i,"sm static",true)}</div><div><b style="font-size:20px">${C[i][0]}</b><p class="small mute" style="margin:4px 0 0">${C[i][2]}</p>${i===mineToday&&S.seen===today()?`<p class="small" style="color:var(--ochre);margin:6px 0 0">Сегодня у вас одна карта на двоих.</p>`:""}</div></div>
+    <p>${C[i][3]}</p>
+    ${me!=null&&f.z>=0?`<div id="cmp">${compatHTML(me,f.z,f.n)}</div>`:`<p class="small mute">Чтобы увидеть совместимость, нужны даты рождения — ваша и друга.</p>`}
+    <button class="btn ghost" id="del">Убрать из друзей</button><button class="btn" id="back">К друзьям</button>`;
+  $("back").onclick=renderFriends;
+  $("del").onclick=()=>{F=F.filter(x=>x.i!==id);saveF();renderFriends()};
+  window.scrollTo(0,0);
+}
+
+// ---------- навигация ----------
+let backTo="spreads";
+function backBtn(to){backTo=to||backTo;try{if(!inTg||!tg.BackButton)return;to?tg.BackButton.show():tg.BackButton.hide()}catch(e){}}
+function go(v){view=v;backBtn(null);document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  ({day:renderDay,spreads:renderSpreads,stars:renderStars,deck:renderDeck,me:renderMe})[v]();window.scrollTo(0,0)}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.v));
+if(inTg){try{tg.ready();tg.expand();tg.setHeaderColor&&tg.setHeaderColor("#0f1219");tg.setBackgroundColor&&tg.setBackgroundColor("#0f1219")}catch(e){}}
+if(inTg&&tg.BackButton)try{tg.BackButton.onClick(()=>go(backTo))}catch(e){}
+if(!inTg&&!LOCAL){
+  // Страница открыта в обычном браузере: приложение работает только внутри Telegram
+  $("tabs").style.display="none";
+  app.innerHTML=`<div class="c" style="margin-top:60px">${cardHTML(17,"md static",true)}<h1>Аркан</h1><p class="mute">Карта дня и расклады Таро.<br>Приложение открывается в Telegram.</p>`+
+    (P.b?`<a class="btn" href="https://t.me/${P.b}">Открыть в Telegram</a>`:"")+`</div>`;
+}else{
+  app.innerHTML=`<p class="c mute it" style="margin-top:120px">Тасуем колоду…</p>`;
+  load(()=>{redeem();
+    const f=addFriend(Q.get("fr"),Q.get("fn"));  // пришли по ссылке друга
+    if(f){view="me";renderFriend(f.i);document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v==="me"));
+      setTimeout(()=>toast(f.n+" теперь в ваших друзьях"),400)}
+    else go("day")});
+}
+</script>
+</body>
+</html>
