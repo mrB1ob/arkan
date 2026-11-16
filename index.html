@@ -7,7 +7,7 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{--night:#0f1219;--night2:#181c27;--line:#2c3142;--paper:#ece2c9;--ink:#1b1a17;--ochre:#c9a24a;--red:#b5402f;--green:#3f7f78;--text:#e9e0cc;--mute:#948c7a;
-  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","Noto Serif",Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;min-height:100%;background:var(--night);color:var(--text);font:17px/1.55 var(--serif)}
 body{background:
@@ -32,13 +32,30 @@ p{margin:0 0 10px}
 .back{background:repeating-linear-gradient(45deg,transparent 0 .5em,rgba(201,162,74,.28) .5em .56em),repeating-linear-gradient(-45deg,transparent 0 .5em,rgba(201,162,74,.28) .5em .56em),#1b2132;border:.12em solid var(--ochre);display:flex;align-items:center;justify-content:center}
 .back:after{content:"";position:absolute;inset:.4em;border:.05em solid rgba(201,162,74,.6);border-radius:.35em}
 .back svg{width:3.2em;height:3.2em;background:#1b2132;border-radius:50%;padding:.3em}
-.front{transform:rotateY(180deg);background:radial-gradient(circle at 30% 18%,#f6eedb,#e4d7b8);color:var(--ink);display:flex;flex-direction:column;align-items:center;padding:.75em .5em .7em}
+.front{transform:rotateY(180deg);background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .36 0 0 0 0 .28 0 0 0 0 .14 0 0 0 .2 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"),radial-gradient(circle at 30% 18%,#f6eedb,#e2d4b3);color:var(--ink);display:flex;flex-direction:column;align-items:center;padding:.75em .5em .7em}
 .front:after{content:"";position:absolute;inset:.32em;border:.07em solid var(--ink);border-radius:.4em;box-shadow:inset 0 0 0 .14em #ece2c9,inset 0 0 0 .19em rgba(27,26,23,.55);pointer-events:none}
 .front .num{font:600 .8em var(--serif);letter-spacing:.12em}
 .front .art{flex:1;width:86%;min-height:0;margin:.15em 0}
 .front .nm{font:600 .62em/1.15 var(--serif);letter-spacing:.14em;text-transform:uppercase;text-align:center;min-height:2.3em;display:flex;align-items:center}
 .art *{fill:none;stroke:#1b1a17;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .art .o{fill:#c9a24a}.art .r{fill:#b5402f}.art .k{fill:#1b1a17}.art .g{stroke:#3f7f78}.art .n{stroke:none}
+.flip.wait .back{animation:glow 2.8s ease-in-out infinite}
+@keyframes glow{0%,100%{box-shadow:0 .5em 1.4em rgba(0,0,0,.5)}50%{box-shadow:0 .5em 1.4em rgba(0,0,0,.5),0 0 34px rgba(201,162,74,.45)}}
+.zg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.14em}
+.wheel{display:block;width:100%;max-width:310px;margin:18px auto 6px}
+.wheel *{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.wheel .w1{stroke:var(--line);stroke-width:1.2}.wheel .w2{stroke:var(--line);stroke-width:1;stroke-dasharray:2 5}
+.wheel .zoff{stroke:var(--mute);stroke-width:1.7}.wheel .zon{stroke:var(--ochre);stroke-width:2}
+.wheel .seg{fill:rgba(201,162,74,.1);stroke:none}
+.wheel .ms{fill:var(--ochre);stroke:none}.wheel .mk{fill:var(--night);stroke:none}.wheel .mm{fill:var(--paper);stroke:none}
+.wheel .ac{stroke:var(--ochre);stroke-width:1.4}.wheel text{fill:var(--ochre);stroke:none;font:11px var(--sans)}
+.pair{display:block;width:100%;max-width:330px;margin:14px auto 0}
+.pair *{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.pair .w1{stroke:var(--line);stroke-width:1.2}.pair .zon{stroke:var(--ochre);stroke-width:1.5}
+.pair .pt{fill:var(--ochre);stroke:none;font:600 44px var(--serif)}
+.pair .bg{stroke:var(--line);stroke-width:4}.pair .fg{stroke:var(--ochre);stroke-width:4}
+.row .ch{color:var(--mute);font:20px var(--sans)}
+.row:last-of-type{border-bottom:1px solid var(--line)}
 .spark{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;background:var(--ochre);transform:rotate(45deg);opacity:0;pointer-events:none;animation:spark .9s ease-out forwards}
 @keyframes spark{0%{opacity:1;transform:translate(0,0) rotate(45deg) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(225deg) scale(.2)}}
 /* ---------- текст расклада ---------- */
@@ -101,10 +118,10 @@ input[type=date]{width:100%;padding:13px;border-radius:12px;border:1px solid var
 .modal{position:fixed;inset:0;background:rgba(6,8,12,.78);display:flex;align-items:flex-end;justify-content:center;z-index:9}
 .sheet{background:var(--night2);border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:6px 18px calc(16px + env(safe-area-inset-bottom));width:100%;max-width:520px}
 .toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--paper);color:var(--ink);padding:10px 16px;border-radius:10px;font:14px var(--sans);z-index:10;max-width:90%;text-align:center}
-.foot{color:#6f6959;font:12px/1.5 var(--sans);margin-top:26px}
+.foot{color:#857e6c;font:12px/1.5 var(--sans);margin-top:26px}
 .yn{font:600 40px var(--serif);color:var(--ochre);margin:6px 0 0}
 button:focus-visible,.opt:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.flip-in{transition:none}.spark{display:none}}
+@media (prefers-reduced-motion:reduce){.flip-in{transition:none}.spark{display:none}.flip.wait .back{animation:none}}
 </style>
 </head>
 <body>
@@ -166,9 +183,9 @@ const rays=(cx,cy,r1,r2,n,off)=>{let s="";for(let i=0;i<n;i++){const a=2*Math.PI
 const inf=(cx,cy)=>`<path d="M${cx} ${cy}c-4-7-14-7-14 0s10 7 14 0s14-7 14 0s-10 7-14 0z"/>`;
 const wave=y=>`<path class="g" d="M14 ${y}q9-7 18 0t18 0t18 0t18 0"/>`;
 const G=[
- `<circle class="o" cx="24" cy="26" r="8"/>${rays(24,26,11,15,8)}<path d="M8 104H58L72 116"/><line x1="34" y1="100" x2="66" y2="38"/><circle class="r" cx="70" cy="31" r="9"/>`,
+ `<circle class="o" cx="22" cy="24" r="8"/>${rays(22,24,11,15,8)}<path d="M8 104H60L74 116"/><circle cx="46" cy="46" r="6"/><path d="M46 52L44 78M44 78L34 102M44 78L56 100M45 60L58 64"/><line x1="30" y1="74" x2="66" y2="34"/><circle class="r" cx="69" cy="30" r="8"/><path class="k" d="M66 96l8-6 2 8z"/>`,
  `${inf(50,28)}<line x1="50" y1="42" x2="50" y2="92"/>${star(50,42,6,2.5,4)}${star(50,92,6,2.5,4)}<path d="M18 102H82"/><circle class="o" cx="28" cy="94" r="6"/><path class="r" d="M66 88h12l-2 12h-8z"/>`,
- `<rect x="20" y="30" width="10" height="72"/><rect x="70" y="30" width="10" height="72"/><path d="M16 30h18M66 30h18M16 102h18M66 102h18"/><path class="o" d="M56 46a18 18 0 1 0 0 36a14 14 0 1 1 0-36z"/>`,
+ `<rect x="20" y="30" width="10" height="72"/><rect x="70" y="30" width="10" height="72"/><path d="M16 30h18M66 30h18M16 102h18M66 102h18"/><path class="o" d="M56 46A20 20 0 1 0 56 82A24 24 0 0 1 56 46Z"/>`,
  `<circle cx="50" cy="52" r="17"/><path d="M50 69V102M37 87H63"/><path class="r" d="M50 60c-9-7-6-15 0-10c6-5 9 3 0 10z"/>${[-24,-12,0,12,24].map(x=>star(50+x,20+Math.abs(x)/3,4,1.6,5)).join("")}`,
  `<path class="o" d="M24 70V40l13 14 13-22 13 22 13-14v30z"/><rect x="24" y="70" width="52" height="9"/><circle class="r" cx="50" cy="98" r="8"/><path d="M50 82v8M45 86h10"/>`,
  `<path d="M50 20V104M40 36H60M34 50H66M28 64H72"/><circle class="o" cx="32" cy="90" r="6"/><circle class="o" cx="68" cy="90" r="6"/>`,
@@ -181,10 +198,10 @@ const G=[
  `<path d="M18 20H82M50 20V38"/><path d="M50 38V82M50 52L63 60L50 68M50 76L39 84M50 76L61 84"/><circle class="o" cx="50" cy="94" r="12"/><circle class="k" cx="50" cy="94" r="5"/>`,
  `<path d="M12 104H88"/><path class="o" d="M56 104a14 14 0 0 1 28 0z"/><path d="M70 84v-6M54 92l-5-4M86 92l5-4"/><line x1="26" y1="104" x2="56" y2="22"/><path class="k" d="M56 22Q92 24 90 60Q78 34 54 28Z"/>`,
  `<path d="M20 30H44L40 50H24Z"/><path d="M56 82H80L76 102H60Z"/><path class="g" d="M40 46Q58 52 66 82" stroke-width="4" stroke-dasharray="2 5"/>${star(74,32,9,3.5,8)}`,
- `<path d="M30 22Q24 54 46 62M70 22Q76 54 54 62"/><path class="r" d="M43 62h14l-7 12z"/><ellipse cx="34" cy="94" rx="9" ry="6"/><ellipse cx="50" cy="94" rx="9" ry="6"/><ellipse cx="66" cy="94" rx="9" ry="6"/>`,
+ `<path class="r" d="M34 42H66L50 74Z"/><path d="M34 42Q24 34 28 16M66 42Q76 34 72 16"/><circle class="k" cx="44" cy="50" r="2"/><circle class="k" cx="56" cy="50" r="2"/><ellipse cx="32" cy="96" rx="9" ry="6"/><ellipse cx="50" cy="96" rx="9" ry="6"/><ellipse cx="68" cy="96" rx="9" ry="6"/><path d="M50 74V90"/>`,
  `<path d="M36 106L40 46H60L64 106Z"/><path class="o" d="M36 46V34h7v6h5v-6h7v6h5v-6h4v12z"/><rect class="k" x="47" y="58" width="6" height="10"/><rect class="k" x="47" y="82" width="6" height="10"/><path class="r" d="M86 8L68 32h8L64 52l22-26h-8z"/><circle class="k" cx="24" cy="72" r="2"/><circle class="k" cx="78" cy="80" r="2"/>`,
  `${star(50,44,24,8,8)}${[[20,20],[80,20],[14,54],[86,54],[28,80],[72,80],[50,86]].map(p=>star(p[0],p[1],5,2,4,"k")).join("")}${wave(106)}`,
- `<path class="o" d="M60 20a26 26 0 1 0 0 52a20 20 0 1 1 0-52z"/><path d="M76 38v6M84 52v6M74 64v6"/><path d="M16 100V84h10v16M74 100V84h10v16"/>${wave(108)}`,
+ `<path class="o" d="M60 20A29 29 0 1 0 60 72A36 36 0 0 1 60 20Z"/><path d="M76 38v6M84 52v6M74 64v6"/><path d="M16 100V84h10v16M74 100V84h10v16"/>${wave(108)}`,
  `<circle class="o" cx="50" cy="60" r="17"/>${rays(50,60,22,35,12)}${rays(50,60,22,28,12,Math.PI/12)}`,
  `<path d="M84 22L46 60"/><path class="o" d="M48 56L22 68Q24 88 42 90L54 64Z"/><path class="r" d="M62 42l10 10 12-12-10-10z"/><path d="M12 30q6-10 14-4q8-8 14 2"/><path d="M16 98l-6 8M30 102l-2 10M10 86l-8 4"/>`,
  `<ellipse class="g" cx="50" cy="60" rx="26" ry="36" stroke-width="5" stroke-dasharray="3 6"/><circle class="o" cx="50" cy="60" r="12"/><path d="M38 60H62M50 48V72M41 52q9 8 18 0M41 68q9-8 18 0"/>${[[14,14],[86,14],[14,106],[86,106]].map(p=>star(p[0],p[1],5,2,4,"k")).join("")}`
@@ -274,11 +291,11 @@ function sec(label,body,title){return `<div class="sec"><div class="lb">${label}
 function renderDay(){
   const i=dayCard(), seen=S.seen===today(), m=moon();
   app.innerHTML=`<div class="top"><b>${longDate()}</b><span>${m[0]}</span></div>
-    ${cardHTML(i,"",seen)}
+    ${cardHTML(i,seen?"":"wait",seen)}
     <div id="dayText">${seen?dayText(i):`<p class="c mute it">Подумайте о предстоящем дне и нажмите на карту</p>`}</div>`;
   if(!seen)app.querySelector(".flip").onclick=function(){
     if(this.classList.contains("open"))return;
-    this.classList.add("open");haptic("heavy");sparks(this);
+    this.classList.remove("wait");this.classList.add("open");haptic("heavy");sparks(this);
     const y=today(new Date(Date.now()-864e5));
     S.st=S.ld===y?(S.st||0)+1:1;S.ld=today();S.seen=today();
     S.h.unshift([today(),"d",i]);
@@ -310,13 +327,15 @@ function dayText(i){const c=C[i], m=moon(), n=dayNumber(), r=S.rt[today()];
       <div class="seg" id="rate">${[["Да",2],["Отчасти",1],["Нет",0]].map(([t,v])=>`<button data-r="${v}" class="${r===v?"on":""}">${t}</button>`).join("")}</div></div>
     <div class="sec">${streakLine()}</div>
     <button class="btn" id="goSpread">Сделать расклад на вопрос</button>
-    <button class="btn ghost" id="share">Поделиться картой</button>
+    <button class="btn ghost" id="share">Отправить карту другу</button>
+    ${canStory?`<button class="btn ghost" id="story">Выложить в сторис</button>`:""}
     <p class="foot">Карты — повод задуматься, а не предсказание. Приложение создано для развлечения.</p>`}
 function bindDay(i){
   const g=$("goSpread");if(g)g.onclick=()=>go("spreads");
   document.querySelectorAll("#rate button").forEach(b=>b.onclick=()=>{S.rt[today()]=+b.dataset.r;save();
     document.querySelectorAll("#rate button").forEach(x=>x.classList.toggle("on",x===b));haptic("light")});
-  const s=$("share");if(s)s.onclick=()=>shareLink("Моя карта дня — «"+C[i][0]+"»: "+C[i][2]+". А какая твоя?","r"+uid);
+  const s=$("share");if(s)s.onclick=()=>shareCard(i);
+  const st=$("story");if(st)st.onclick=()=>{try{tg.shareToStory(BASE+"story/"+i+".jpg",{text:"Моя карта дня — «"+C[i][0]+"». Узнай свою: t.me/"+P.b})}catch(e){toast("Не получилось открыть сторис")}};
 }
 
 // ---------- «Расклады» ----------
@@ -487,7 +506,21 @@ function renderMe(){
 
 // ---------- звёзды: данные ----------
 const EL=["Огонь","Земля","Воздух","Вода"], ELG=["огня","земли","воздуха","воды"];
-const ZG="♈♉♊♋♌♍♎♏♐♑♒♓";
+// Символы знаков, нарисованные линиями (одинаково выглядят на всех телефонах)
+const ZP=[
+'<path d="M12 21V9c0-6-7-6.500-7-1.500M12 9c0-6 7-6.500 7-1.500"/>',
+'<circle cx="12" cy="15" r="5"/><path d="M5 4c1 5 4 6 7 6s6-1 7-6"/>',
+'<path d="M6 4c4 2 8 2 12 0M6 20c4-2 8-2 12 0M9 5v14M15 5v14"/>',
+'<path d="M5 9c3-4 11-4 14-1M19 15c-3 4-11 4-14 1"/><circle cx="7.500" cy="10.500" r="2.500"/><circle cx="16.500" cy="13.500" r="2.500"/>',
+'<circle cx="7.500" cy="14" r="3"/><path d="M10.500 14c0-5-2.500-6.500-2.500-9.500a4.500 4.500 0 0 1 9 0c0 5-4 8.500-2.500 12.500.800 2 3 2 4.500.500"/>',
+'<path d="M4 6v12M4 8c0-3 4-3 4 0v10M8 8c0-3 4-3 4 0v10M12 8c0-3 4-3 4 0v6c0 4-2 6-5 7M16 11c4-2 5.500 4 0 6"/>',
+'<path d="M4 20h16M4 16h5a4.500 4.500 0 1 1 6 0h5"/>',
+'<path d="M4 6v12M4 8c0-3 4-3 4 0v10M8 8c0-3 4-3 4 0v10M12 8c0-3 4-3 4 0v9c0 2 1.500 3 4.500 3M18 17l3 3-3 2.500"/>',
+'<path d="M5 19L19 5M12 5h7v7M7 11l6 6"/>',
+'<path d="M4 6c3 0 4 3 4 8M8 10c0-4 5-5 5 0v6c0 3-2 5-4 5"/><circle cx="16.500" cy="16" r="3.500"/>',
+'<path d="M3 10l3-3 3 3 3-3 3 3 3-3 3 3M3 17l3-3 3 3 3-3 3 3 3-3 3 3"/>',
+'<path d="M6 4c4 5 4 11 0 16M18 4c-4 5-4 11 0 16M4 12h16"/>'].map(x=>x.replace(/\.(\d)00/g,".$1"));
+const zg=(i,size)=>`<svg class="zg" viewBox="0 0 24 24" width="${size||22}" height="${size||22}">${ZP[i]}</svg>`;
 // [знак, управитель, аркан, суть (Солнце), чувства (Луна), впечатление (асцендент), даты]
 const Z=[
 ["Овен","Марс",4,"прямота, смелость и желание быть первым","В чувствах вы вспыхиваете мгновенно и так же быстро остываете.","энергичным и решительным","21 марта — 19 апреля"],
@@ -557,9 +590,9 @@ function birthMs(time){const [y,m,d]=S.bd.split("-").map(Number), [hh,mm]=(time|
   return Date.UTC(y,m-1,d,hh,mm)-(S.bt?+S.tz:3)*36e5}
 function natal(){
   if(!S.bd)return null;
-  const ms=birthMs(S.bt), r={sun:signOf(sunLon(ms)),moon:signOf(moonLon(ms)),moonAlt:-1,asc:-1};
+  const ms=birthMs(S.bt), r={sun:signOf(sunLon(ms)),moon:signOf(moonLon(ms)),moonAlt:-1,asc:-1,sunL:sunLon(ms),moonL:moonLon(ms),ascL:null};
   if(!S.bt){const a=signOf(moonLon(birthMs("00:00"))), b=signOf(moonLon(birthMs("23:59")));if(a!==b){r.moon=a;r.moonAlt=b}}
-  else{const c=CITY[S.ci], lat=c?c[1]:+S.la, lon=c?c[2]:+S.lo;if(isFinite(lat)&&isFinite(lon)&&Math.abs(lat)<66)r.asc=signOf(ascLon(ms,lat,lon))}
+  else{const c=CITY[S.ci], lat=c?c[1]:+S.la, lon=c?c[2]:+S.lo;if(isFinite(lat)&&isFinite(lon)&&Math.abs(lat)<66){r.ascL=ascLon(ms,lat,lon);r.asc=signOf(r.ascL)}}
   return r}
 function mySign(){return S.bd?signOf(sunLon(birthMs(S.bt))):null}
 function horo(z){const mz=signOf(moonLon(Date.now())), h=k=>hash(z+"|"+today()+"|"+k);
@@ -574,6 +607,29 @@ function compat(a,b){
   else note="Знаки мало похожи по характеру: вам придётся учиться друг у друга.";
   s+=hash("c"+Math.min(a,b)+"|"+Math.max(a,b))%7-3;
   return {score:Math.max(35,Math.min(97,s)),text:p[1],adv:p[2],note}}
+// Натальный круг: знаки идут против часовой стрелки, асцендент — слева, как в классической карте.
+function wheel(n){
+  const cx=150, cy=150, R=142, r1=104, base=n.ascL!=null?n.ascL:0;
+  const P=(lon,r)=>{const a=(lon-base)*rad;return [(cx-r*Math.cos(a)).toFixed(1),(cy+r*Math.sin(a)).toFixed(1)]};
+  let o="";
+  [n.sun,n.moonAlt>=0?-1:n.moon,n.asc].forEach(z=>{if(z<0)return;const a=P(z*30,R),b=P(z*30+30,R),c=P(z*30+30,r1),d=P(z*30,r1);
+    o+=`<path class="seg" d="M${a}A${R} ${R} 0 0 0 ${b}L${c}A${r1} ${r1} 0 0 1 ${d}Z"/>`});
+  o+=`<circle cx="150" cy="150" r="${R}" class="w1"/><circle cx="150" cy="150" r="${r1}" class="w1"/><circle cx="150" cy="150" r="82" class="w2"/><circle cx="150" cy="150" r="54" class="w2"/>`;
+  for(let i=0;i<12;i++){const a=P(i*30,r1), b=P(i*30,R), g=P(i*30+15,(R+r1)/2), on=i===n.sun||(n.moonAlt<0&&i===n.moon)||i===n.asc;
+    o+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" class="w1"/><g transform="translate(${g[0]-11},${g[1]-11}) scale(.92)" class="${on?"zon":"zoff"}">${ZP[i]}</g>`}
+  if(n.ascL!=null)o+=`<line x1="150" y1="150" x2="${cx-r1}" y2="150" class="ac"/><path class="ac" d="M${cx-r1+9} 145l-9 5 9 5"/><text x="${cx-30}" y="144">Асц</text>`;
+  const s=P(n.sunL,82), m=P(n.moonL,54);
+  o+=`<g transform="translate(${s})"><circle r="9" class="ms"/><circle r="2.6" class="mk"/></g>`;
+  if(n.moonAlt<0)o+=`<g transform="translate(${m})"><circle r="11" class="mk"/><path class="mm" d="M4-8A9 9 0 1 0 4 8A10 10 0 0 1 4-8Z"/></g>`;
+  return `<svg viewBox="0 0 300 300" class="wheel" role="img" aria-label="Натальный круг">${o}</svg>
+    <p class="small mute c">Золотой круг — Солнце, полумесяц — Луна${n.ascL!=null?", стрелка слева — асцендент":""}.</p>`}
+const deg=l=>Math.floor(n360(l)%30)+"°";
+function pairSVG(a,b,score){
+  return `<svg viewBox="0 0 330 124" class="pair" role="img" aria-label="Совместимость ${score}%">
+    <circle cx="48" cy="56" r="38" class="w1"/><g transform="translate(30,38) scale(1.5)" class="zon">${ZP[a]}</g>
+    <circle cx="282" cy="56" r="38" class="w1"/><g transform="translate(264,38) scale(1.5)" class="zon">${ZP[b]}</g>
+    <text x="165" y="66" text-anchor="middle" class="pt">${score}%</text>
+    <line x1="110" y1="92" x2="220" y2="92" class="bg"/><line x1="110" y1="92" x2="${110+110*score/100}" y2="92" class="fg"/></svg>`}
 const dots=n=>`<span class="dots">${"●".repeat(n)}${"○".repeat(5-n)}</span>`;
 const zopts=sel=>Z.map((z,i)=>`<option value="${i}" ${i===sel?"selected":""}>${z[0]} (${z[6]})</option>`).join("");
 const signFromDate=v=>{const [y,m,d]=v.split("-").map(Number);return signOf(sunLon(Date.UTC(y,m-1,d,9)))};
@@ -589,18 +645,19 @@ function renderStars(){
   }else{
     const n=natal(), z=n.sun, h=horo(z);
     app.innerHTML=`<div class="top"><b>${longDate()}</b><span>Луна в знаке ${Z[h.mz][0]}</span></div>
-      <h1>${ZG[z]}︎ ${Z[z][0]}</h1><p class="keys">${Z[z][3]}</p>
+      <h1>${zg(z,30)} ${Z[z][0]}</h1><p class="keys">${Z[z][3]}</p>
       <p class="small mute">Стихия ${ELG[zel(z)]}, управитель — ${Z[z][1]}. Аркан вашего знака — ${C[Z[z][2]][0]}: когда он выпадает картой дня, это ваш день силы.</p>
       ${sec("Сегодня для вас",h.text)}
       <div class="facts"><b>Любовь</b> ${dots(h.love)}<br><b>Дела</b> ${dots(h.work)}<br><b>Силы</b> ${dots(h.energy)}<br><b>Число удачи:</b> ${h.num}</div>
       <h2>Натальная тройка</h2>
-      ${sec("Солнце в знаке "+Z[n.sun][0],"Ваша суть — "+Z[n.sun][3]+".")}
-      ${n.moonAlt>=0?sec("Луна в знаке "+Z[n.moon][0]+" или "+Z[n.moonAlt][0],"В день вашего рождения Луна переходила из знака в знак. Укажите время рождения, чтобы узнать точно."):sec("Луна в знаке "+Z[n.moon][0],Z[n.moon][4])}
-      ${n.asc>=0?sec("Асцендент в знаке "+Z[n.asc][0],"Со стороны вы кажетесь "+Z[n.asc][5]+" человеком."):`<p class="small mute">Асцендент — знак, который восходил над горизонтом в минуту вашего рождения. Чтобы его узнать, нужны время и город.</p>`}
-      <button class="btn ghost" id="natal">${S.bt?"Изменить время и город рождения":"Узнать асцендент"}</button>
-      <button class="btn" id="compat">Проверить совместимость</button>
-      <button class="btn ghost" id="quiz">Тест «Ваша стихия»${S.q!=null?": "+EL[S.q].toLowerCase():""}</button>
-      <button class="btn ghost" id="signs">Все знаки зодиака</button>
+      ${wheel(n)}
+      ${sec("Солнце в знаке "+Z[n.sun][0]+", "+deg(n.sunL),"Ваша суть — "+Z[n.sun][3]+".")}
+      ${n.moonAlt>=0?sec("Луна в знаке "+Z[n.moon][0]+" или "+Z[n.moonAlt][0],"В день вашего рождения Луна переходила из знака в знак. Укажите время рождения, чтобы узнать точно."):sec("Луна в знаке "+Z[n.moon][0]+", "+deg(n.moonL),Z[n.moon][4])}
+      ${n.asc>=0?sec("Асцендент в знаке "+Z[n.asc][0]+", "+deg(n.ascL),"Со стороны вы кажетесь "+Z[n.asc][5]+" человеком."):`<p class="small mute">Асцендент — знак, который восходил над горизонтом в минуту вашего рождения. Чтобы его узнать, нужны время и город.</p>`}
+      <button class="btn" id="compat" style="margin:18px 0 14px">Проверить совместимость</button>
+      <div class="row" id="natal"><div class="d"><b>Время и город рождения</b><span>${S.bt?"Указаны: "+S.bt+(CITY[S.ci]?", "+CITY[S.ci][0]:"")+". Нажмите, чтобы изменить":"Нужны, чтобы узнать асцендент"}</span></div><div class="ch">›</div></div>
+      <div class="row" id="quiz"><div class="d"><b>Тест «Ваша стихия»</b><span>${S.q!=null?"Ваш результат: "+EL[S.q].toLowerCase()+". Можно пройти заново":"Семь вопросов о характере"}</span></div><div class="ch">›</div></div>
+      <div class="row" id="signs"><div class="d"><b>Все знаки зодиака</b><span>Даты, стихии и арканы</span></div><div class="ch">›</div></div>
       <p class="foot">Положения Солнца, Луны и асцендента считаются по упрощённым астрономическим формулам; у границ знаков возможна неточность. Гороскоп — для развлечения.</p>`;
     $("natal").onclick=renderNatalForm;
   }
@@ -633,14 +690,14 @@ function renderNatalForm(){
 function renderSigns(){
   backBtn("stars");
   app.innerHTML=`<h1>Знаки зодиака</h1><p class="mute">Нажмите на знак, чтобы проверить совместимость с ним.</p>`+
-    Z.map((z,i)=>`<div class="row" data-z="${i}"><div class="g">${ZG[i]}︎</div><div class="d"><b>${z[0]}</b><span>${z[6]}. Стихия ${ELG[zel(i)]}, ${z[1]}. Аркан — ${C[z[2]][0]}.</span><span>${z[3][0].toUpperCase()+z[3].slice(1)}.</span></div></div>`).join("")+
+    Z.map((z,i)=>`<div class="row" data-z="${i}"><div class="g">${zg(i,26)}</div><div class="d"><b>${z[0]}</b><span>${z[6]}. Стихия ${ELG[zel(i)]}, ${z[1]}. Аркан — ${C[z[2]][0]}.</span><span>${z[3][0].toUpperCase()+z[3].slice(1)}.</span></div></div>`).join("")+
     `<button class="btn ghost" id="back" style="margin-top:16px">К звёздам</button>`;
   app.querySelectorAll(".row").forEach(r=>r.onclick=()=>renderCompat(+r.dataset.z));
   $("back").onclick=()=>go("stars");
 }
 function compatHTML(a,b,nameB){
   const r=compat(a,b);
-  return `<div class="big">${r.score}%</div><h2 style="margin-top:0">${Z[a][0]} и ${nameB?esc(nameB)+" ("+Z[b][0]+")":Z[b][0]}</h2>
+  return `${pairSVG(a,b,r.score)}<h2 style="margin-top:10px">${Z[a][0]} и ${nameB?esc(nameB)+" ("+Z[b][0]+")":Z[b][0]}</h2>
     <p class="small mute">${EL[zel(a)]} и ${EL[zel(b)].toLowerCase()}. Арканы пары — ${C[Z[a][2]][0]} и ${C[Z[b][2]][0]}.</p>
     ${sec("Что между вами",r.text)}${sec("Как сочетаются знаки",r.note)}${sec("Совет паре",r.adv)}`;
 }
@@ -663,6 +720,16 @@ function renderCompat(pre,friend){
     $("out").scrollIntoView({behavior:"smooth",block:"start"})};
   $("ok").onclick=show;$("back").onclick=()=>friend?renderFriends():go("stars");
   if(pre!=null||friend)show();
+}
+// Картой делимся через страницу-открытку: Telegram показывает в чате картинку карты,
+// а переход по ссылке ведёт в бота с отметкой пригласившего.
+const BASE=location.href.split("?")[0].replace(/[^/]*$/,"");
+const canStory=inTg&&!!P.b&&!!tg.shareToStory&&tg.isVersionAtLeast&&tg.isVersionAtLeast("7.8");
+function shareCard(i){
+  const text="Моя карта дня — «"+C[i][0]+"»: "+C[i][2]+". А какая твоя?";
+  if(!inTg||!P.b)return shareLink(text,"r"+uid);
+  const url=BASE+"c/"+i+".html?b="+encodeURIComponent(P.b)+"&u="+uid;
+  tg.openTelegramLink("https://t.me/share/url?url="+encodeURIComponent(url)+"&text="+encodeURIComponent(text));
 }
 function shareLink(text,start){
   const url=P.b?"https://t.me/"+P.b+"?start="+start:location.href.split("?")[0];
@@ -705,7 +772,7 @@ function renderFriends(){
   backBtn("me");const me=mySign();
   const rowsAll=[{me:1,n:"Вы",z:me==null?-1:me,s:S.st||0,c:collected(),i:uid}].concat(F).sort((a,b)=>b.c-a.c||b.s-a.s);
   app.innerHTML=`<h1>Друзья</h1><p class="mute">${F.length?"Рейтинг по размеру коллекции. Карта дня друга показана на сегодня; серия и коллекция — на день, когда он прислал ссылку.":"Отправьте другу свою ссылку. Когда он пришлёт свою в ответ, здесь появятся его карта дня, серия, коллекция и ваша совместимость."}</p>
-    ${F.length?rowsAll.map((f,k)=>`<div class="row" ${f.me?"":`data-i="${f.i}"`}><div class="g">${k+1}</div><div class="d"><b>${esc(f.n)}${f.z>=0?" "+ZG[f.z]+"︎":""}</b>
+    ${F.length?rowsAll.map((f,k)=>`<div class="row" ${f.me?"":`data-i="${f.i}"`}><div class="g">${k+1}</div><div class="d"><b>${esc(f.n)}${f.z>=0?" "+zg(f.z,18):""}</b>
       <span>${f.me?"":"Сегодня: "+C[dayCardOf(f.i,today())][0]+". "}Серия ${f.s} ${plural(f.s,"день","дня","дней")}${f.me||f.d===today()?"":" на "+fmtDate(f.d).slice(0,5)}</span></div><div class="v">${f.c}/22</div></div>`).join(""):""}
     <button class="btn" id="inv" style="margin-top:18px">Отправить свою ссылку другу</button>
     <button class="btn ghost" id="back">Назад</button>
