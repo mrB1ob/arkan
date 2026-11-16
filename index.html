@@ -220,6 +220,17 @@ const Q=new URLSearchParams(location.search);
 const LOCAL=location.protocol==="file:";  // файл открыт с диска: демо-режим для проверки
 const P={s:Q.get("s"),p:Q.get("p"),b:Q.get("b")||"",demo:LOCAL};
 const PRICE_ONE=+Q.get("po")||15, PRICE_PRO=+Q.get("pp")||149;  // цены задаёт бот
+// ---------- статистика (Яндекс Метрика) ----------
+// Номер счётчика передаёт бот (файл metrika.txt). Без номера ничего не загружается и не отправляется.
+// Адрес страницы с параметрами в Метрику не уходит: экраны отправляются как условные страницы /arkan/v/<экран>.
+const YM=LOCAL?0:(+Q.get("ym")||0);
+if(YM){
+  (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();
+    k=e.createElement(t);a=e.getElementsByTagName(t)[0];k.async=1;k.src=r;a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js","ym");
+  ym(YM,"init",{defer:true,clickmap:false,trackLinks:false,webvisor:false,accurateTrackBounce:true});
+}
+function hit(screen){try{if(YM)ym(YM,"hit",location.origin+"/arkan/v/"+screen,{title:"Аркан: "+screen})}catch(e){}}
+function goal(name,params){try{if(YM)ym(YM,"reachGoal",name,params||{})}catch(e){}}
 const uid=(inTg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.id)||0;
 const cloud=inTg&&tg.CloudStorage&&tg.isVersionAtLeast&&tg.isVersionAtLeast("6.9");
 let S={st:0,ld:"",seen:"",h:[],cr:0,pro:0,free:0,yn:"",u:[],lg:[],rt:{},rw:[],bd:"",bt:"",ci:0,tz:3,la:0,lo:0,c:null,cw:[],q:null};
@@ -303,7 +314,7 @@ function renderDay(){
     <div id="dayText">${seen?dayText(i):`<p class="c mute it">Подумайте о предстоящем дне и нажмите на карту</p>`}</div>`;
   if(!seen)app.querySelector(".flip").onclick=function(){
     if(this.classList.contains("open"))return;
-    this.classList.remove("wait");this.classList.add("open");haptic("heavy");sparks(this);
+    this.classList.remove("wait");this.classList.add("open");haptic("heavy");sparks(this);goal("card_open");
     const y=today(new Date(Date.now()-864e5));
     S.st=S.ld===y?(S.st||0)+1:1;S.ld=today();S.seen=today();
     const rev=dayRev();
@@ -347,7 +358,7 @@ function bindDay(i){
   document.querySelectorAll("#rate button").forEach(b=>b.onclick=()=>{S.rt[today()]=+b.dataset.r;save();
     document.querySelectorAll("#rate button").forEach(x=>x.classList.toggle("on",x===b));haptic("light")});
   const s=$("share");if(s)s.onclick=()=>shareCard(i);
-  const st=$("story");if(st)st.onclick=()=>{try{tg.shareToStory(BASE+"story/"+i+".jpg",{text:"Моя карта дня — «"+C[i][0]+"». Узнай свою: t.me/"+P.b})}catch(e){toast("Не получилось открыть сторис")}};
+  const st=$("story");if(st)st.onclick=()=>{goal("share",{type:"story"});try{tg.shareToStory(BASE+"story/"+i+".jpg",{text:"Моя карта дня — «"+C[i][0]+"». Узнай свою: t.me/"+P.b})}catch(e){toast("Не получилось открыть сторис")}};
 }
 
 // ---------- «Расклады» ----------
@@ -374,7 +385,7 @@ function renderSpreads(){
 function weekPos(){const out=[];for(let d=1;d<=7;d++){const x=new Date(Date.now()+d*864e5);
   const s=x.toLocaleDateString("ru-RU",{weekday:"long",day:"numeric",month:"long"});out.push([s[0].toUpperCase()+s.slice(1),3])}return out}
 function runSpread(k){
-  const sp=SPREADS[k], pos=sp.pos||weekPos(), n=pos.length, ids=draw(n);backBtn("spreads");
+  const sp=SPREADS[k], pos=sp.pos||weekPos(), n=pos.length, ids=draw(n);backBtn("spreads");hit("spread-"+k);goal("spread_start",{kind:k});
   S.h.unshift([today(),k,...ids]);collect(ids);save();
   app.innerHTML=`<h1>${sp.name}</h1><p class="mute it">Открывайте карты по очереди, слева направо</p>
     <div class="cards n${n}">${ids.map((i,x)=>`<div>${cardHTML(i,n>3?"xs":"sm",false)}<div class="lbl">${n>3?pos[x][0].split(",")[0]:pos[x][0]}</div></div>`).join("")}</div>
@@ -393,7 +404,7 @@ function runSpread(k){
   });
 }
 function runYN(){
-  backBtn("spreads");const i=draw(1)[0], c=C[i];S.yn=today();S.h.unshift([today(),"yn",i]);collect([i]);save();
+  backBtn("spreads");hit("yn");goal("spread_start",{kind:"yn"});const i=draw(1)[0], c=C[i];S.yn=today();S.h.unshift([today(),"yn",i]);collect([i]);save();
   const ans={y:"Да",n:"Скорее нет",m:"Пока неясно"}[c[8]];
   app.innerHTML=`<h1>Да или нет</h1><p class="mute it">Задайте вопрос и нажмите на карту</p>${cardHTML(i,"",false)}<div id="out"></div>
     <button class="btn ghost" id="back">К раскладам</button>`;
@@ -404,6 +415,7 @@ function runYN(){
 
 // ---------- оплата ----------
 function paywall(onOk){
+  hit("paywall");goal("paywall_show");
   const m=document.createElement("div");m.className="modal";
   m.innerHTML=`<div class="sheet"><h2>Открыть расклад</h2>
     <p class="mute">Подарочный расклад уже использован. Карта дня, колода и вопрос «да или нет» остаются бесплатными.</p>
@@ -434,11 +446,11 @@ function redeem(){
   setTimeout(()=>toast(id[0]==="r"?"Вам подарок: бесплатный расклад":k==="pro"?"Безлимит подключён":"Расклад добавлен"),400);
 }
 function buy(kind,done){
-  const link=kind==="pro"?P.p:P.s;
+  const link=kind==="pro"?P.p:P.s;goal("pay_click",{kind:kind});
   if(P.demo&&!inTg){grant(kind);return done&&done()}
   if(!inTg||!link||!tg.openInvoice)return toast("Оплата доступна в приложении внутри Telegram");
   tg.openInvoice(link,status=>{
-    if(status==="paid"){S.lg=(S.lg||[]).concat(kind).slice(-10);grant(kind);haptic("heavy");done&&done()}
+    if(status==="paid"){S.lg=(S.lg||[]).concat(kind).slice(-10);grant(kind);haptic("heavy");hit("paid-"+kind);goal("pay_done",{kind:kind});done&&done()}
     else if(status==="failed")toast("Оплата не прошла. Попробуйте ещё раз.");
   });
 }
@@ -469,7 +481,7 @@ function renderDeck(){
   app.querySelectorAll(".deck>div").forEach(d=>d.onclick=()=>renderCard(+d.dataset.i));
 }
 function renderCard(i,from){
-  const c=C[i], k=S.c[i]||0;backBtn(from||"deck");
+  const c=C[i], k=S.c[i]||0;backBtn(from||"deck");hit("card");
   const nav=`<div style="display:flex;gap:10px"><button class="btn ghost" id="prev">${C[(i+21)%22][0]}</button><button class="btn ghost" id="next">${C[(i+1)%22][0]}</button></div>
     <button class="btn" id="back">Вся коллекция</button>`;
   if(!k)app.innerHTML=`${cardHTML(i,"dim",false)}<h1>${c[0]}</h1><p class="keys">${c[2]}</p><p class="small mute">${ASTRO[i]}</p>
@@ -704,7 +716,7 @@ function renderNatalForm(){
     if(!isFinite(tz)||tz<-12||tz>14)return toast("Проверьте часовой пояс");
     if(ci===-1){const la=parseFloat($("la").value), lo=parseFloat($("lo").value);
       if(!isFinite(la)||!isFinite(lo)||Math.abs(la)>=66||Math.abs(lo)>180)return toast("Укажите широту (до 66°) и долготу");S.la=la;S.lo=lo}
-    S.bd=bd;S.bt=bt;S.ci=ci;S.tz=tz;save();haptic();go("stars");
+    S.bd=bd;S.bt=bt;S.ci=ci;S.tz=tz;save();haptic();goal("natal_done");go("stars");
   };
 }
 function renderSigns(){
@@ -716,7 +728,7 @@ function renderSigns(){
   $("back").onclick=()=>go("stars");
 }
 function renderSign(i){
-  backBtn("stars");const z=Z[i], x=ZX[i];
+  backBtn("stars");hit("sign");const z=Z[i], x=ZX[i];
   const best=Z.map((q,k)=>[k,compat(i,k).score]).filter(q=>q[0]!==i).sort((a,b)=>b[1]-a[1]).slice(0,3);
   app.innerHTML=`<h1>${zg(i,30)} ${z[0]}</h1><p class="keys">${z[6]}</p>
     <p class="small mute">Стихия ${ELG[zel(i)]}, управитель — ${z[1]}. Аркан знака — ${C[z[2]][0]}.</p>
@@ -732,7 +744,7 @@ function renderSign(i){
   window.scrollTo(0,0);
 }
 function renderMoonCal(){
-  backBtn("stars");const me=mySign();let rowsH="";
+  backBtn("stars");hit("mooncal");const me=mySign();let rowsH="";
   for(let d=0;d<7;d++){const dt=new Date();dt.setHours(12,0,0,0);dt.setDate(dt.getDate()+d);
     const ms=dt.getTime(), mz=signOf(moonLon(ms)), ph=moon(ms);
     rowsH+=sec(d===0?"Сегодня":longDate(dt),`${ph[0]}: ${ph[1]}. По знаку — ${MOONADV[zel(mz)]}.${me!=null?" "+MOONEL[zel(me)][zel(mz)]:""}`,"Луна в "+ZIN[mz]);}
@@ -747,7 +759,7 @@ function compatHTML(a,b,nameB){
     ${sec("Что между вами",r.text)}${sec("Как сочетаются знаки",r.note)}${sec("Совет паре",r.adv)}`;
 }
 function renderCompat(pre,friend){
-  backBtn(friend?"me":"stars");const me=mySign();
+  backBtn(friend?"me":"stars");hit("compat");const me=mySign();
   app.innerHTML=`<h1>Совместимость</h1><p class="mute">По знакам зодиака: стихии, аспект между знаками и арканы пары.</p>
     <label class="f">Ваш знак</label><select id="za">${zopts(me==null?0:me)}</select>
     <label class="f">Знак партнёра или друга</label><select id="zb">${zopts(pre==null?6:pre)}</select>
@@ -761,6 +773,7 @@ function renderCompat(pre,friend){
   app.querySelectorAll(".chips button").forEach(b=>b.onclick=()=>{$("zb").value=b.dataset.z;nm=b.dataset.n;show()});
   const show=()=>{const a=+$("za").value, b=+$("zb").value, r=compat(a,b);haptic();
     $("out").innerHTML=compatHTML(a,b,nm)+`<button class="btn ghost" id="shareC">Поделиться результатом</button>`;
+    goal("compat_check");
     $("shareC").onclick=()=>shareLink("Наша совместимость — "+r.score+"%: "+Z[a][0]+" и "+Z[b][0]+". Проверь свою","r"+uid);
     $("out").scrollIntoView({behavior:"smooth",block:"start"})};
   $("ok").onclick=show;$("back").onclick=()=>friend?renderFriends():go("stars");
@@ -771,20 +784,22 @@ function renderCompat(pre,friend){
 const BASE=location.href.split("?")[0].replace(/[^/]*$/,"");
 const canStory=inTg&&!!P.b&&!!tg.shareToStory&&tg.isVersionAtLeast&&tg.isVersionAtLeast("7.8");
 function shareCard(i){
+  goal("share",{type:"card"});
   const text="Моя карта дня — «"+C[i][0]+"»: "+C[i][2]+". А какая твоя?";
   if(!inTg||!P.b)return shareLink(text,"r"+uid);
   const url=BASE+"c/"+i+".html?b="+encodeURIComponent(P.b)+"&u="+uid;
   tg.openTelegramLink("https://t.me/share/url?url="+encodeURIComponent(url)+"&text="+encodeURIComponent(text));
 }
 function shareLink(text,start){
+  goal("share",{type:"link"});
   const url=P.b?"https://t.me/"+P.b+"?start="+start:location.href.split("?")[0];
   const link="https://t.me/share/url?url="+encodeURIComponent(url)+"&text="+encodeURIComponent(text);
   if(inTg)tg.openTelegramLink(link);else window.open(link,"_blank");
 }
 function renderQuiz(){
-  backBtn("stars");const score=[0,0,0,0];let q=0;
+  backBtn("stars");hit("quiz");const score=[0,0,0,0];let q=0;
   const step=()=>{
-    if(q>=QUIZ.length){const e=score.indexOf(Math.max(...score)), z=mySign();S.q=e;save();haptic("heavy");
+    if(q>=QUIZ.length){const e=score.indexOf(Math.max(...score)), z=mySign();S.q=e;save();haptic("heavy");goal("quiz_done");
       const cards=C.map((c,i)=>CEL[i]===e?c[0]:null).filter(Boolean).join(", ");
       app.innerHTML=`<p class="mute it">Ваша стихия по характеру</p><div class="big" style="font-size:48px">${EL[e]}</div>
         <p>${ELTEXT[e]}</p>
@@ -812,9 +827,9 @@ function addFriend(code,name){
   const m=/^([0-9a-z]{1,11})_([a-lx])([0-9a-lx])([0-9a-z]{1,3})_([0-9a-m])$/.exec(code||"");if(!m)return null;
   const id=parseInt(m[1],36);if(!id||id===uid)return null;
   const f={i:id,n:(name||"Друг").slice(0,20),z:m[2]==="x"?-1:m[2].charCodeAt(0)-97,b:m[3]==="x"?-1:parseInt(m[3],36),s:parseInt(m[4],36),c:parseInt(m[5],36),d:today()};
-  F=F.filter(x=>x.i!==id);F.unshift(f);F=F.slice(0,20);saveF();return f}
+  F=F.filter(x=>x.i!==id);F.unshift(f);F=F.slice(0,20);saveF();goal("friend_add");return f}
 function renderFriends(){
-  backBtn("me");const me=mySign();
+  backBtn("me");hit("friends");const me=mySign();
   const rowsAll=[{me:1,n:"Вы",z:me==null?-1:me,s:S.st||0,c:collected(),i:uid}].concat(F).sort((a,b)=>b.c-a.c||b.s-a.s);
   app.innerHTML=`<h1>Друзья</h1><p class="mute">${F.length?"Рейтинг по размеру коллекции. Карта дня друга показана на сегодня; серия и коллекция — на день, когда он прислал ссылку.":"Отправьте другу свою ссылку. Когда он пришлёт свою в ответ, здесь появятся его карта дня, серия, коллекция и ваша совместимость."}</p>
     ${F.length?rowsAll.map((f,k)=>`<div class="row" ${f.me?"":`data-i="${f.i}"`}><div class="g">${k+1}</div><div class="d"><b>${esc(f.n)}${f.z>=0?" "+zg(f.z,18):""}</b>
@@ -846,9 +861,10 @@ function renderFriend(id){
 // ---------- навигация ----------
 let backTo="spreads";
 function backBtn(to){backTo=to||backTo;try{if(!inTg||!tg.BackButton)return;to?tg.BackButton.show():tg.BackButton.hide()}catch(e){}}
-function go(v){view=v;backBtn(null);document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+function go(v){view=v;hit(v);backBtn(null);document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
   ({day:renderDay,spreads:renderSpreads,stars:renderStars,deck:renderDeck,me:renderMe})[v]();window.scrollTo(0,0)}
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.v));
+if(YM&&uid)try{ym(YM,"setUserID",String(hash("u"+uid)))}catch(e){}  // обезличенная отметка, чтобы считать возвраты
 if(inTg){try{tg.ready();tg.expand();tg.setHeaderColor&&tg.setHeaderColor("#0f1219");tg.setBackgroundColor&&tg.setBackgroundColor("#0f1219")}catch(e){}}
 if(inTg&&tg.BackButton)try{tg.BackButton.onClick(()=>go(backTo))}catch(e){}
 if(!inTg&&!LOCAL){
